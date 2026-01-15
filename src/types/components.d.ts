@@ -36,6 +36,8 @@ declare module 'vue' {
     ElSubMenu: typeof import('element-plus/es')['ElSubMenu']
     ElTag: typeof import('element-plus/es')['ElTag']
     HeaderSearch: typeof import('./../components/HeaderSearch/index.vue')['default']
+    MouseTrail: typeof import('./../components/MouseTrail/index.vue')['default']
+    Particles: typeof import('./../components/Particles/index.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Search: typeof import('./../components/Search/index.vue')['default']

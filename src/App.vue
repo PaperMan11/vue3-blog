@@ -1,5 +1,7 @@
 <template>
   <el-config-provider :size="size" :z-index="zIndex" :locale="locale">
+    <MouseTrail/>
+    <Particles/>
     <router-view />
   </el-config-provider>
 </template>
