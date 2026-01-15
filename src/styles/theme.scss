@@ -1,0 +1,24 @@
+// 亮色模式下的主题色
+:root {
+  --blog-card-box-bg-color: #ffffff;
+  --blog-card-box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  --blog-footer-border-top: 1px solid #f0f0f0;
+  --blog-header-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); // 导航栏底部轻阴影，层次感拉满
+}
+
+// 暗色模式下的主题色
+html.dark {
+  --blog-backgroud-color: #424242;
+  --blog-card-box-bg-color: #292D3DFF;
+  --blog-card-box-shadow: 0 2px 12px 0 rgba(255, 255, 255, 0.1);
+  --blog-footer-border-top: 1px solid #424242;
+  --blog-header-box-shadow: 0 2px 8px rgba(255, 255, 255, 0.06); // 导航栏底部轻阴影，层次感拉满
+}
+
+// 全局字体
+body {
+  /* 将 body 元素或者任何其他你想要应用该字体的元素设置为 '阿里妈妈方圆体 VF Regular' */
+  font-family: "阿里妈妈方圆体 VF Regular", sans-serif;
+  // font-family: "Share Tech Mono", sans-serif;
+}
+
