@@ -185,6 +185,9 @@ const clearAllHistory = () => {
 
 .search-input-box {
   width: 240px;
+  * {
+    cursor: text;
+  }
   :deep(.el-input) {
     width: 100%;
     .el-input__wrapper {
@@ -198,8 +201,8 @@ const clearAllHistory = () => {
       &:hover {
         border-color: #d1d5db;
         background-color: #f3f4f6;
+        
       }
-
       &.is-focus {
         border-color: #409eff;
         background-color: #ffffff;

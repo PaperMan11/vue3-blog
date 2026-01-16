@@ -12,6 +12,7 @@ import 'element-plus/dist/index.css'
 // 黑暗模式
 import 'element-plus/theme-chalk/dark/css-vars.css'
 import '@/styles/woff.scss' // 引入字体图标样式
+import '@/styles/cursor.scss' // 引入鼠标样式
 
 // 必须：注册 SVG 图标（vite-plugin-svg-icons 核心步骤）
 import 'virtual:svg-icons-register'

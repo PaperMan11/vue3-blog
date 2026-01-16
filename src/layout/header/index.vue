@@ -50,14 +50,14 @@
       <ThemeToggle />
       <!-- 搜索框 -->
       <Search />
-      <div v-if="!isLoggedIn" style="cursor: pointer;">
-        <el-avatar @click="toPage('/welcome/login')">登录</el-avatar>
+      <div v-if="!isLoggedIn">
+        <el-avatar style="cursor: pointer;" @click="toPage('/welcome/login')">登录</el-avatar>
       </div>
       <!-- 用户信息栏 -->
       <div v-else class="user-info-box">
         <el-dropdown trigger="hover">
           <div class="user-avatar">
-            <el-avatar :src="avatarUrl"/>
+            <el-avatar style="cursor: pointer;" :src="avatarUrl"/>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
@@ -181,7 +181,6 @@ watch(() => userStore.userId, (newVal) => {
         height: 36px;
         line-height: 36px;
         border-radius: 20px;
-        cursor: pointer;
         font-size: 14px;
         color: #333;
         transition: all 0.25s ease;
