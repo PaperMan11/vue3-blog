@@ -1,41 +1,60 @@
 <template>
-  <div class="article-contanier">
-    <div class="article-card" v-for="value, index in articleList" :key="value.id">
-      <div class="article-title">{{ value.title }}</div>
-      <!-- 文章数据统计 -->
-      <div class="article-stats">
-        <div class="view">
-          <svg-icon icon-class="reading" />
-          <span>{{ value.stats.views }}</span>
+  <div class="article-container">
+    <!-- 博客列表主体 -->
+    <div class="article-list">
+      <div class="article-card" v-for="value, index in articleList" :key="value.id">
+        <!-- 头部：标题 + 核心数据 -->
+        <div class="card-header">
+          <h3 class="article-title">{{ value.title }}</h3>
+          <div class="article-stats">
+            <div class="stat-item">
+              <svg-icon icon-class="reading" class="stat-icon" />
+              <span class="stat-text">{{ value.stats.views }}</span>
+            </div>
+            <div class="stat-item">
+              <svg-icon icon-class="like" class="stat-icon" />
+              <span class="stat-text">{{ value.stats.likes }}</span>
+            </div>
+            <div class="stat-item">
+              <svg-icon icon-class="comments" class="stat-icon" />
+              <span class="stat-text">{{ value.stats.comments }}</span>
+            </div>
+            <div class="stat-item">
+              <svg-icon icon-class="collection" class="stat-icon" />
+              <span class="stat-text">{{ value.stats.favorites }}</span>
+            </div>
+          </div>
         </div>
-        <div class="like">
-          <svg-icon icon-class="like" />
-          <span>{{ value.stats.likes }}</span>
+
+        <!-- 中部：摘要 -->
+        <div class="card-body">
+          <p class="summary">{{ value.summary }}</p>
         </div>
-        <div class="comment">
-          <svg-icon icon-class="comments" />
-          <span>{{ value.stats.comments }}</span>
+
+        <!-- 底部：标签 + 作者/时间（辅助信息） -->
+        <div class="card-footer">
+          <div class="tags">
+            <el-tag 
+              v-for="tag in value.tags" 
+              :key="tag" 
+              type="primary" 
+              size="small"
+              class="tag-item"
+            >{{ tag }}</el-tag>
+          </div>
+          <div class="article-meta">
+            <span class="author">@{{ value.author }}</span>
+            <span class="divider">·</span>
+            <span class="date">发布于 {{ formatTime(value.createdAt, 'YYYY-MM-DD') }}</span>
+            <span class="divider">·</span>
+            <span class="date updated">最后更新 {{ formatTime(value.updatedAt, 'YYYY-MM-DD') }}</span>
+          </div>
         </div>
-        <div class="favorite">
-          <svg-icon icon-class="collection" />
-          <span>{{ value.stats.favorites }}</span>
-        </div>
-      </div>
-      <!-- 摘要 -->
-      <div class="summary">{{ value.summary }}</div>
-      <!-- 标签 -->
-      <div class="tags">
-        <el-tag v-for="tag in value.tags" type="primary" :key="tag" size="small">{{ tag }}</el-tag>
-      </div>
-      <!-- 作者+创建时间+更新时间 -->
-      <div class="article-info">
-        <span class="author">作者：{{ value.author }}</span>
-        <span class="date">发布于 {{ formatTime(value.createdAt, 'YYYY-MM-DD') }}</span>
-        <span class="date">更新于 {{ formatTime(value.updatedAt, 'YYYY-MM-DD') }}</span>
       </div>
     </div>
-    <!-- 分页组件 完整配置 -->
-    <div class="pagination-box">
+
+    <!-- 分页 -->
+    <div class="pagination-wrapper">
       <el-pagination
         v-model:current-page="page"
         v-model:page-size="pageSize"
@@ -45,16 +64,16 @@
         background
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
+        class="pagination"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue' // ✅ 修复：补充缺失的ref引入
+import { ref } from 'vue'
 import { formatTime } from '@/utils/time';
 
-// ✅ TS类型约束 保持不变
 interface ArticleStats {
   views: number;
   likes: number;
@@ -72,20 +91,19 @@ interface ArticleItem {
   stats: ArticleStats;
 }
 
-const page = ref(1);         // 当前页码
-const pageSize = ref(5);     // 每页显示条数
-const total = ref(100);      // 总数据条数
+// 分页相关
+const page = ref(1);
+const pageSize = ref(5);
+const total = ref(100);
 
 const handleSizeChange = (val: number) => {
   pageSize.value = val;
-  page.value = 1; // 切换条数时，重置为第一页
-  // 这里写：调用文章列表接口，传参 page + pageSize
+  page.value = 1;
   console.log('每页条数：', val, '当前页码：', page.value);
 };
 
 const handleCurrentChange = (val: number) => {
   page.value = val;
-  // 这里写：调用文章列表接口，传参 page + pageSize
   console.log('当前页码：', val);
 };
 
@@ -100,120 +118,171 @@ const articleList: ArticleItem[] = [
 </script>
 
 <style scoped lang="scss">
-.article-contanier {
+.article-container {
   width: 100%;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column; // flex垂直单列排列
-  gap: 20px; // 卡片之间的间距
-  padding: 8px 0;
+  max-width: 1200px;
   margin: 0 auto;
-  // max-width: 860px; // 加宽一点，适配分页，阅读更舒适
+  padding: 24px 16px;
+  box-sizing: border-box;
+}
+
+// 文章列表：网格布局+呼吸感间距
+.article-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px; // 卡片间距
+  margin-bottom: 40px; // 与分页保持足够间距
 }
 
 .article-card {
-  border-radius: 12px; // 大圆角 柔和风格
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1); // 轻量阴影
-  padding: 20px 22px;
+  background: #fff;
+  border-radius: 16px; // 大圆角
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+  padding: 28px 32px;
   box-sizing: border-box;
-  * {
-    cursor: pointer;
-  }
-  transition: all 0.25s ease-in-out; // 悬浮过渡动画 丝滑
+  transition: all 0.3s ease;
+  cursor: pointer;
 
-  // 卡片悬浮微动效
+  // 悬浮动效：轻微上浮+阴影加深
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   }
-}
 
-// 文章标题样式 - 突出显示 视觉核心
-.article-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-  line-height: 1.5;
-  margin-bottom: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis; // 超长标题省略
-}
+  // 内部模块化分区：header/body/footer 清晰分离
+  .card-header {
+    margin-bottom: 20px;
 
-// 文章数据统计区 - 阅读/点赞/评论/收藏 横向排列
-.article-stats {
-  display: flex;
-  align-items: center;
-  gap: 18px; // 统计项之间的间距
-  margin-bottom: 12px;
+    .article-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1d2129;
+      line-height: 1.4;
+      margin: 0 0 12px 0;
+      transition: color 0.2s ease;
 
-  // 单个统计项样式
-  > div {
+      &:hover {
+        color: #409eff; // 悬浮变色，引导点击
+      }
+    }
+
+    .article-stats {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      color: #86909c;
+
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+
+        .stat-icon {
+          width: 16px;
+          height: 16px;
+        }
+
+        .stat-text {
+          &:hover {
+            color: #409eff;
+          }
+        }
+      }
+    }
+  }
+
+  // 摘要
+  .card-body {
+    margin-bottom: 24px;
+
+    .summary {
+      font-size: 15px;
+      color: #4e5969;
+      line-height: 1.8;
+      margin: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+
+  // 底部
+  .card-footer {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 4px; // 图标与数字间距
-    font-size: 13px;
-    color: #909399;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding-top: 20px;
+    border-top: 1px solid #f2f3f5;
+
+    .tags {
+      display: flex;
+      gap: 8px;
+
+      .tag-item {
+        background: #f0f7ff;
+        color: #409eff;
+        border: none;
+        border-radius: 4px;
+        padding: 2px 8px;
+
+        &:hover {
+          background: #409eff;
+          color: #fff;
+        }
+      }
+    }
+
+    // 元信息
+    .article-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #86909c;
+
+      .author {
+        color: #1d2129;
+        font-weight: 500;
+
+        &:hover {
+          color: #409eff;
+        }
+      }
+
+      .divider {
+        color: #c9cdD4;
+      }
+
+      .updated {
+        color: #9da3ad;
+        font-size: 13px;
+      }
+    }
   }
 }
 
-.summary {
-  font-size: 14px;
-  color: #606266;
-  line-height: 1.7;
-  display: -webkit-box;
-  -webkit-line-clamp: 3; // 最多显示3行
-  -webkit-box-orient: vertical;
-  overflow: hidden; // 超出3行自动省略
-  margin-bottom: 16px;
-}
-
-// 文章标签区域样式
-.tags {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap; // 标签过多自动换行
-  gap: 8px; // 标签之间的间距
-  margin-bottom: 18px;
-}
-
-// 文章底部信息区 - 作者+时间
-.article-info {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 12px;
-  padding-top: 10px;
-  border-top: 1px solid #f0f2f5; // 顶部分割线 区分内容区
-
-  // 作者文本样式
-  .author {
-    color: #303133;
-    font-weight: 500;
-  }
-
-  // 时间文本样式
-  .date {
-    color: #909399;
-  }
-}
-
-// 分页区域样式
-.pagination-box {
+// 分页
+.pagination-wrapper {
   width: 100%;
-  padding: 16px 0 5px;
-  box-sizing: border-box;
-  text-align: center; // 分页组件水平居中
-  // 穿透修改分页组件样式，和全站主题色统一
-  :deep(.el-pagination) {
-    --el-pagination-active-color: #409eff; // 分页选中主题蓝，和你的全站配色一致
-  }
-  // 分页背景色美化，和卡片阴影质感匹配
-  :deep(.el-pagination.is-background .el-pager li:not(.disabled).active) {
-    background-color: #409eff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px 0;
+
+  .pagination {
+    --el-pagination-active-color: #409eff;
+
+    :deep(.el-pagination.is-background .el-pager li:not(.disabled).active) {
+      background-color: #409eff;
+    }
+
+    :deep(.el-pagination__total) {
+      color: #86909c;
+    }
   }
 }
 </style>
-
-
