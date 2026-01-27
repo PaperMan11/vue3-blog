@@ -31,7 +31,6 @@
   position: absolute;
   top: 40%;
   left: 50%;
-  background-color: #ffffff;
 }
 
 .wscn-http404 {

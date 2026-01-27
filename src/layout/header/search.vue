@@ -53,10 +53,8 @@
 
 <script setup lang="ts">
 import { ref, watchEffect, onMounted, onUnmounted } from 'vue'
-// 导入需要的图标
 import { Search, Clock, Delete } from '@element-plus/icons-vue'
 
-// ========== 响应式数据 ==========
 const searchValue = ref('')
 // 控制下拉框显隐
 const showSearchBox = ref(false)
@@ -68,8 +66,7 @@ const searchRecommendList = ref<string[]>(['前端博客', 'Sass用法', 'Pinia'
 // 防抖定时器
 let timer: NodeJS.Timeout | null = null
 
-// ========== 静态数据 - 可根据你的博客业务修改 ==========
-// 博客热门搜索推荐（标签/分类/高频关键词）
+// 标签/分类/高频关键词
 const hotRecommendList = [
   'Vue3', 'TypeScript', '前端博客', 'Sass用法', 'Pinia', 'Vite', 'ElementPlus', '前端进阶'
 ]
@@ -79,7 +76,7 @@ const searchMatchPool = [
   'Vite项目搭建', 'ElementPlus组件', '前端工程化', '博客搭建教程', 'CSS布局技巧'
 ]
 
-// ========== 初始化 - 获取本地缓存的搜索历史 ==========
+// ========== 获取本地缓存的搜索历史 ==========
 onMounted(() => {
   const history = localStorage.getItem('blog_search_history')
   if (history) {
@@ -89,13 +86,12 @@ onMounted(() => {
   document.addEventListener('click', handleDocumentClick)
 })
 
-// ========== 组件销毁 - 清除定时器和事件监听 ==========
 onUnmounted(() => {
   document.removeEventListener('click', handleDocumentClick)
   timer && clearTimeout(timer)
 })
 
-// ========== 核心监听 - 输入关键词实现防抖联想 ==========
+// ========== 输入关键词实现防抖联想 ==========
 watchEffect(() => {
   const keyword = searchValue.value.trim()
   // 清空联想列表
@@ -112,13 +108,11 @@ watchEffect(() => {
   }, 300)
 })
 
-// ========== 事件方法 ==========
-/** 点击页面空白处关闭下拉框 */
+
 const handleDocumentClick = () => {
   showSearchBox.value = false
 }
 
-/** 回车搜索/手动搜索核心方法 */
 const handleSearch = () => {
   const keyword = searchValue.value.trim()
   if (!keyword) return
@@ -262,8 +256,11 @@ const clearAllHistory = () => {
     padding: 8px 16px;
     font-size: 14px;
     color: #374151;
-    cursor: pointer;
     transition: all 0.2s ease;
+
+    * {
+      cursor: pointer;
+    }
 
     &:hover {
       background-color: #f9fafb;

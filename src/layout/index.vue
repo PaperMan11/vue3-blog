@@ -1,11 +1,11 @@
 <template>
   <el-container class="blog-layout">
-    <!-- 顶部导航栏 - 你的Header组件 -->
+    <!-- 顶部导航栏 -->
     <el-header class="blog-header">
       <Header />
     </el-header>
 
-    <!-- 主体内容区 - 路由视图 + 你保留的过渡动画 -->
+    <!-- 主体内容区 -->
     <el-main class="blog-main">
       <router-view v-slot="{ Component }">
         <transition name="el-fade-in-linear" mode="out-in">
@@ -45,16 +45,42 @@ import Header from './header/index.vue'
   box-shadow: var(--blog-header-box-shadow); // 导航栏底部轻阴影，层次感拉满
 }
 
-// 核心主体内容区 - 重中之重，解决滚动/留白/居中问题
 .blog-main {
-  flex: 1; // 关键：自动占满除header+footer外的所有剩余高度
+  flex: 1; // 自动占满除header+footer外的所有剩余高度
   width: 100%;
-  max-width: 100%; // 博客标配：内容最大宽度，大屏不会撑满，阅读更舒适
+  max-width: 100%; 
   margin: 0 auto; // 内容水平居中
   padding: 14px 10px; // 上下左右留白，内容不贴边
   box-sizing: border-box;
   overflow-y: auto; // 内容超出时，只在主体区滚动，顶部导航固定不动
-  background-color: #f9fafb2a; // 柔和背景色，护眼，符合博客阅读场景
+  background-color: #f9fafb2a;
+  // 1. Chrome/Safari/Edge 浏览器：隐藏滚动条占位，仅hover/滚动时显示
+  &::-webkit-scrollbar {
+    width: 0px; // 初始滚动条宽度为0（隐藏占位）
+    height: 0px;
+  }
+  // 内容溢出时，滚动条hover/激活时显示
+  &:hover::-webkit-scrollbar {
+    width: 6px; // 显示滚动条（宽度可自定义）
+  }
+  // 滚动激活状态：强制显示滚动条
+  // &.scroll-active::-webkit-scrollbar {
+  //   width: 6px;
+  // }
+
+  // 滚动条轨道样式
+  &::-webkit-scrollbar-track {
+    background: transparent; // 轨道透明，无多余底色
+    border-radius: 3px;
+  }
+  // 滚动条滑块样式
+  &::-webkit-scrollbar-thumb {
+    background: #d1d5db; // 滑块浅灰色
+    border-radius: 3px;
+    &:hover {
+      background: #94a3b8; // hover时加深
+    }
+  }
 }
 
 // 底部版权栏
