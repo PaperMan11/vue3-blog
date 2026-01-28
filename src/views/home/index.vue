@@ -43,8 +43,8 @@ import ArticleList from './components/article-list.vue'
 .main-content {
   flex: 1; // 占满剩余宽度
   min-width: 600px; // 最小宽度，防止挤变形
-  border-radius: 12px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.18);
   padding: 30px 40px;
   box-sizing: border-box;
   background-color: #fff;
