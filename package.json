@@ -20,7 +20,9 @@
     "axios": "^1.13.2",
     "easy-typer-js": "^2.1.0",
     "element-plus": "^2.13.0",
+    "highlight.js": "^11.11.1",
     "js-cookie": "^3.0.5",
+    "marked": "^17.0.3",
     "nprogress": "^0.2.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.26",
@@ -28,6 +30,7 @@
   },
   "devDependencies": {
     "@tsconfig/node20": "^20.1.8",
+    "@types/marked": "^5.0.2",
     "@types/node": "^24.10.4",
     "@vitejs/plugin-vue": "^6.0.3",
     "@vue/eslint-config-prettier": "^10.2.0",

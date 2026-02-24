@@ -12,6 +12,17 @@
           <component :is="Component" />
         </transition>
       </router-view>
+
+      <!-- 全局回到顶部组件 -->
+      <el-backtop 
+        class="blog-backtop-btn" 
+        target=".blog-main"
+        :visibility-height="200"            
+        :bottom="100"            
+      >
+        <!-- <svg-icon icon-class="back_to_top"/> -->
+        <el-icon><Top /></el-icon>
+      </el-backtop>
     </el-main>
 
     <!-- 底部版权栏 -->
@@ -54,6 +65,7 @@ import Header from './header/index.vue'
   box-sizing: border-box;
   overflow-y: auto; // 内容超出时，只在主体区滚动，顶部导航固定不动
   background-color: #f9fafb2a;
+  position: relative; // 关键：为Backtop提供定位参考
   // 1. Chrome/Safari/Edge 浏览器：隐藏滚动条占位，仅hover/滚动时显示
   &::-webkit-scrollbar {
     width: 0px; // 初始滚动条宽度为0（隐藏占位）
@@ -104,5 +116,62 @@ import Header from './header/index.vue'
 :deep(.el-container) {
   padding: 0;
   margin: 0;
+}
+
+// ===================== 回到顶部按钮样式 =====================
+.blog-backtop-btn {
+  height: 100%;
+  width: 100%;
+  line-height: 48px;
+  text-align: center;
+  border-radius: 12px;
+  // 主背景：渐变+半透明，适配不同背景色
+  background: linear-gradient(135deg, var(--blog-backgroud-color, #ffffff) 0%, #f8fafc 100%);
+  color: #64748b;
+  font-size: 20px; // 图标放大，更醒目
+  // 多层阴影：外层柔化阴影+内层轻微高光，提升立体感
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.08), // 外层柔化阴影
+    inset 0 1px 0 rgba(255, 255, 255, 0.8); // 内层高光
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); // 缓动曲线更丝滑
+  border: 1px solid #e2e8f0;
+  // 防止图标错位
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // 鼠标悬浮样式
+  &:hover {
+    // 主题色渐变，更有层次感
+    background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+    color: #fff;
+    // 悬浮动效：轻微放大+上移+阴影强化
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 
+      0 8px 20px rgba(64, 158, 255, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    // 边框变色，和主题色统一
+    border-color: #409eff;
+  }
+  // 点击按压效果
+  &:active {
+    transform: translateY(-1px) scale(0.98);
+    box-shadow: 
+      0 2px 8px rgba(64, 158, 255, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    // 按压时圆角轻微缩小，强化质感
+    border-radius: 10px;
+  }
+  // 图标内部微调，居中更精准
+  :deep(.el-icon) {
+    font-size: inherit;
+    line-height: 1;
+  }
+}
+
+// 确保Backtop组件层级，不被遮挡
+:deep(.el-backtop) {
+  z-index: 999;
+  width: 48px;
+  height: 48px;
 }
 </style>

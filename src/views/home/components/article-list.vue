@@ -126,7 +126,7 @@ const handleCurrentChange = (val: number) => {
 <style scoped lang="scss">
 .article-container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 16px;
   box-sizing: border-box;
