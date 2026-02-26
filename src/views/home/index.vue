@@ -48,6 +48,22 @@ import ArticleList from './components/article-list.vue'
   padding: 30px 40px;
   box-sizing: border-box;
   background-color: #fff;
+  overflow-x: auto; // 内容超出宽度时显示横向滚动条
+  // 滚动条样式
+  &::-webkit-scrollbar {
+    height: 6px; // 横向滚动条高度
+  }
+  &::-webkit-scrollbar-track {
+    background: #f5f5f5; // 滚动条轨道色
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #d1d5db; // 滚动条滑块色
+    border-radius: 3px;
+    &:hover {
+      background: #94a3b8; // hover加深
+    }
+  }
 
   // 内容内包裹层，防止文字贴边
   .content-wrap {

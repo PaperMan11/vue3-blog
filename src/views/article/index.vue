@@ -9,7 +9,16 @@
         
         <!-- 文章元信息 -->
         <div class="article-meta">
-          发布时间：{{ articleInfo.publishTime }} | 作者：{{ articleInfo.author }}
+          <div class="article-author">
+            <div>发布：{{ articleInfo.createdTime }}</div>
+            <div>更新：{{ articleInfo.updatedTime }}</div>
+            <div>作者：{{ articleInfo.author }}</div>
+          </div>
+          <div class="article-stat">
+            <div>访问量:{{ articleInfo.views }}</div>
+            <div>评论数:{{ articleInfo.comments }}</div>
+            <div>点赞量:{{ articleInfo.likes }}</div>
+          </div>
         </div>
         
         <!-- Markdown内容渲染区域（添加v-if确保渲染器配置完成后再渲染） -->
@@ -53,9 +62,13 @@ import 'highlight.js/styles/github.min.css';
 // 1. 定义类型接口
 interface ArticleInfo {
   title: string;
-  publishTime: string;
+  createdTime: string;
+  updatedTime: string;
   author: string;
   content: string;
+  views: number;
+  likes: number;
+  comments: number;
 }
 
 // 目录项类型
@@ -68,8 +81,12 @@ interface TocItem {
 // 2. 定义文章数据
 const articleInfo = ref<ArticleInfo>({
   title: 'Vue3 + TS 实现Markdown文章展示',
-  publishTime: '2026-02-24',
+  createdTime: '2026-02-24',
+  updatedTime: '2026-02-25',
   author: 'Vue开发者',
+  views: 1234,
+  likes: 567,
+  comments: 89,
   content: `
 # Markdown 一级标题
 这是用 Vue3 + TypeScript 渲染的Markdown文章示例。
@@ -398,6 +415,90 @@ const handleTocClick = (e: Event) => {
   color: #888;         /* 浅灰色，不抢正文焦点 */
   font-size: 0.9rem;   /* 小号字体 */
   margin-bottom: 30px; /* 下外边距，与正文分隔 */
+  /* 新增：Flex布局，左右分栏 */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* 新增：小屏自适应 */
+  flex-wrap: wrap;
+  gap: 16px;
+  /* 浅灰色背景+圆角，区分元信息区域 */
+  background-color: #fafafa;
+  padding: 16px 20px;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
+}
+
+/* 作者/时间区域样式 */
+.article-author {
+  /* Flex横向排列，间距均匀 */
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* 统计数据区域样式 */
+.article-stat {
+  /* Flex横向排列，间距均匀 */
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  /* 右侧区域加浅边框分隔，视觉更清晰 */
+  padding-left: 20px;
+  border-left: 1px solid #e8e8e8;
+}
+
+/* 元信息子项样式优化 */
+.article-author > div,
+.article-stat > div {
+  /* 图标+文字垂直居中 */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* 防止文字挤压 */
+  white-space: nowrap;
+}
+
+/* 为统计项添加简易图标（伪元素实现，无额外依赖） */
+.article-stat > div::before {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* 新增：访问量图标 */
+.article-stat > div:nth-child(1)::before {
+  content: '👁️';
+}
+
+/* 新增：评论数图标 */
+.article-stat > div:nth-child(2)::before {
+  content: '💬';
+}
+
+/* 新增：点赞量图标 */
+.article-stat > div:nth-child(3)::before {
+  content: '👍';
+}
+
+/* 新增：响应式适配：小屏时取消分隔线，全屏宽度 */
+@media (max-width: 768px) {
+  .article-meta {
+    padding: 12px 16px;
+  }
+  .article-author,
+  .article-stat {
+    gap: 12px;
+    width: 100%;
+  }
+  .article-stat {
+    padding-left: 0;
+    border-left: none;
+    padding-top: 12px;
+    border-top: 1px solid #e8e8e8;
+  }
 }
 
 /* Markdown内容容器：基础字体大小 */
@@ -486,5 +587,4 @@ const handleTocClick = (e: Event) => {
 .markdown-content :deep(a:hover) {
   text-decoration: underline;
 }
-
 </style>
