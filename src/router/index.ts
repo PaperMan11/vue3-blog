@@ -26,9 +26,39 @@ export const constantRoutes:RouteRecordRaw[] = [
         name: 'Register'
       },
       {
-        path: '/article',
-        component: () => import('@/views/article/index.vue'),
-        name: 'Article',
+        path: '/article/:id/detail',
+        component: () => import('@/views/article/article-detail/index.vue'),
+        name: 'ArticleDetail',
+      },
+      {
+        path: '/article/write',
+        component: () => import('@/views/article/article-write/index.vue'),
+        name: 'ArticleWrite',
+        meta: { title: '编写博客' }
+      },
+      {
+        path: '/article/write/:id',
+        component: () => import('@/views/article/article-write/index.vue'),
+        name: 'ArticleEdit',
+        meta: { title: '修改博客' }
+      },
+      {
+        path: '/article/category',
+        component: () => import('@/views/article/article-category/category/index.vue'),
+        name: 'ArticleCategory',
+        meta: { title: '文章分类' }
+      },
+      {
+        path: '/article/category/:id',
+        component: () => import('@/views/article/article-category/category-detail/index.vue'),
+        name: 'CategoryDetail',
+        meta: { title: '分类详情' }
+      },
+      {
+        path: '/user/profile',
+        component: () => import('@/views/user/profile/index.vue'),
+        name: 'UserProfile',
+        meta: { title: '个人中心' }
       }
     ]
   },

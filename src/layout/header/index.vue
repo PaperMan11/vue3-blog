@@ -5,7 +5,7 @@
       class="header-menu"
       mode="horizontal"
       :ellipsis="false"
-      @select="handleSelect"
+      @select="toPage"
     >
       <el-menu-item index="/home">
         <el-icon><HomeFilled/></el-icon>
@@ -20,7 +20,7 @@
           <el-icon><Clock/></el-icon>
           <span>时间轴</span>
         </el-menu-item>
-        <el-menu-item index="2-2">
+        <el-menu-item index="/article/category">
           <el-icon><Folder/></el-icon>
           <span>分类</span>
         </el-menu-item>
@@ -55,21 +55,24 @@
       </div>
       <!-- 用户信息栏 -->
       <div v-else class="user-info-box">
-        <el-dropdown trigger="hover">
+        <el-dropdown
+          trigger="hover"
+          @command="toPage"
+        >
           <div class="user-avatar">
             <el-avatar style="cursor: pointer;" :src="avatarUrl"/>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item>
+              <el-dropdown-item command="/user/profile">
                 <el-icon><UserFilled /></el-icon>
                 <span>个人中心</span>
               </el-dropdown-item>
-              <el-dropdown-item>
+              <el-dropdown-item command="/article/write">
                 <el-icon><EditPen /></el-icon>
                 <span>写文章</span>
               </el-dropdown-item>
-              <el-dropdown-item divided>
+              <el-dropdown-item divided @click="handleLogout">
                 <el-icon><SwitchButton /></el-icon>
                 <span>退出登录</span>
               </el-dropdown-item>
@@ -92,42 +95,24 @@ const userStore = useUserStore()
 
 // 菜单默认高亮项
 const activeIndex = ref('/home')
-// 搜索框绑定值
-const searchValue = ref('')
 
 // 头像地址
 const avatarUrl = ref(userStore.avatar)
 // 是否登录状态
 const isLoggedIn = ref(userStore.userId.length > 0)
 
-// 菜单选择事件 - 所有导航菜单点击跳转路由
-const handleSelect = (key: string) => {
-  // console.log(key, keyPath)
-  router.push(key)
-}
-
 // 公共跳转方法 - 用户下拉项通用
 const toPage = (path: string) => {
   router.push(path)
 }
 
-
 const handleLogout = () => {
   // 清空pinia中的用户信息
   userStore.logout()
-  // 跳转到登录页
-  setTimeout(() => {
-    router.push('/welcome/login')
-  }, 500)
-}
-
-// ✅ 搜索方法
-const handleSearch = () => {
-  console.log('搜索内容：', searchValue.value)
-  // if(searchValue.value) {
-  //   // 搜索跳转，可自定义路由地址
-  //   router.push(`/search?keyword=${searchValue.value}`)
-  // }
+  // // 跳转到登录页
+  // setTimeout(() => {
+  //   router.push('/home')
+  // }, 500)
 }
 
 // 监听路由变化 - 页面刷新/跳转后，菜单高亮当前页面
@@ -163,7 +148,7 @@ watch(() => userStore.userId, (newVal) => {
   .el-menu--horizontal {
     --el-menu-horizontal-height: 50px;
   }
-  
+
   .header-right-box {
     display: flex;
     align-items: center;

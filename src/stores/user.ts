@@ -1,11 +1,15 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { getToken, setToken, removeToken } from '@/utils/auth';
 
 export interface IUserState {
   token: string;
   userId: string,
-  name: string;
+  username: string;
+  nickname: string;
+  email: string;
+  bio: string;
+  website: string;
   avatar: string;
   introduction: string;
   roles: string[];
@@ -14,25 +18,61 @@ export interface IUserState {
 const useUserStore = defineStore('user', () => {
   const token = ref<string>(getToken() || '');
   const userId = ref<string>('');
-  const name = ref<string>('');
+  const username = ref<string>('');
+  const nickname = ref<string>('');
+  const email = ref<string>('');
+  const bio = ref<string>('');
+  const website = ref<string>('');
   const avatar = ref<string>('');
   const introduction = ref<string>('');
   const roles = ref<string[]>([]);
 
+  // 计算属性：用户信息
+  const userInfo = computed(() => {
+    return {
+      userId: userId.value,
+      username: username.value,
+      nickname: nickname.value,
+      email: email.value,
+      bio: bio.value,
+      website: website.value,
+      avatar: avatar.value,
+      introduction: introduction.value,
+      roles: roles.value
+    };
+  });
+
   const login = (userInfo) => {
-    const { token: userToken } = userInfo;
-    token.value = userToken;
-    setToken(userToken);
+    const { token: userToken, username: userUsername } = userInfo;
+    token.value = userToken || 'mock-token';
+    username.value = userUsername;
+    setToken(token.value);
   }
 
   const logout = () => {
     token.value = '';
+    userId.value = '';
+    username.value = '';
+    nickname.value = '';
+    email.value = '';
+    bio.value = '';
+    website.value = '';
+    avatar.value = '';
+    introduction.value = '';
     roles.value = [];
     removeToken();
   }
 
   const resetToken = () => {
     token.value = '';
+    userId.value = '';
+    username.value = '';
+    nickname.value = '';
+    email.value = '';
+    bio.value = '';
+    website.value = '';
+    avatar.value = '';
+    introduction.value = '';
     roles.value = [];
     removeToken();
   }
@@ -43,13 +83,21 @@ const useUserStore = defineStore('user', () => {
     return new Promise((resolve) => {
       setTimeout(() => {
         userId.value = '12345';
-        name.value = 'John Doe';
-        avatar.value = 'https://example.com/avatar.jpg';
+        username.value = 'user123';
+        nickname.value = '用户123';
+        email.value = 'user123@example.com';
+        bio.value = '这是一个个人简介';
+        website.value = 'https://example.com';
+        avatar.value = '';
         introduction.value = 'I am a Vue.js developer.';
         roles.value = ['admin'];
         resolve({
           userId: userId.value,
-          name: name.value,
+          username: username.value,
+          nickname: nickname.value,
+          email: email.value,
+          bio: bio.value,
+          website: website.value,
           avatar: avatar.value,
           introduction: introduction.value,
           roles: roles.value
@@ -58,18 +106,35 @@ const useUserStore = defineStore('user', () => {
     });
   }
 
+  // 更新用户信息
+  const updateUserInfo = (userInfo) => {
+    const { username: userUsername, nickname, email, bio, website, avatar } = userInfo;
+    if (userUsername) username.value = userUsername;
+    if (nickname) nickname.value = nickname;
+    if (email) email.value = email;
+    if (bio) bio.value = bio;
+    if (website) website.value = website;
+    if (avatar) avatar.value = avatar;
+  }
+
   return {
     token,
     userId,
-    name,
+    username,
+    nickname,
+    email,
+    bio,
+    website,
     avatar,
     introduction,
     roles,
+    userInfo,
 
     login,
     logout,
     resetToken,
-    getInfo
+    getInfo,
+    updateUserInfo
   };
 });
 

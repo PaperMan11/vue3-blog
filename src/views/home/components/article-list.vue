@@ -9,7 +9,7 @@
 
     <!-- 博客列表主体 -->
     <div class="article-list">
-      <div class="article-item" v-for="value, index in currentArticleList" :key="value.id">
+      <div class="article-item" v-for="value, index in currentArticleList" :key="value.id", @click="handleClick(value)">
         <!-- 作者头像 -->
         <div class="item-left">
           <img src="" alt="作者头像" class="avatar" />
@@ -52,6 +52,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { formatTime } from '@/utils/time';
+import { useRouter } from 'vue-router';
+
+// 路由实例
+const router = useRouter();
+
+
 
 interface ArticleStats {
   views: number;
@@ -112,7 +118,7 @@ const switchTab = (tab: string) => {
   page.value = 1; // 切换标签时重置页码为第一页
   // 模拟请求对应标签的文章列表（实际项目中替换为接口调用）
   console.log(`切换到【${tab === 'recent' ? '最近' : tab === 'vote' ? '投票' : '热门'}】标签`);
-  
+
   // todo 实际项目调用接口
 };
 
@@ -120,6 +126,11 @@ const handleCurrentChange = (val: number) => {
   page.value = val;
   console.log('当前页码：', val);
   // todo 实际项目调用接口
+};
+
+// 处理点击事件
+const handleClick = (article: ArticleItem) => {
+  router.push(`/article/${article.id}/detail`);
 };
 </script>
 

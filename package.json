@@ -17,6 +17,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "@kangc/v-md-editor": "^2.3.18",
     "axios": "^1.13.2",
     "easy-typer-js": "^2.1.0",
     "element-plus": "^2.13.0",

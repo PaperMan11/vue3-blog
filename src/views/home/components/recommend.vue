@@ -7,7 +7,7 @@
     <div class="split-line"></div>
     <div class="recommend-content">
       <!-- 循环推荐列表 + 序号 -->
-      <div class="recommend-item" v-for="(value, index) in recommends" :key="value.id">
+      <div class="recommend-item" v-for="(value, index) in recommends" :key="value.id" @click="handleClick(value)">
         <!-- 封面图 + 无封面兜底图标 -->
         <div class="cover-box">
           <img v-if="value.cover.length > 0" :src="value.cover" alt="封面图" class="cover-img">
@@ -41,6 +41,14 @@ const recommends = [
   { id: 4, title: '响应式编程入门指南', cover: '', createdAt: 1768762281, updatedAt: 1768762281 },
   { id: 5, title: '构建高可用的前端应用', cover: '', createdAt: 1768752281, updatedAt: 1768752281 },
 ]
+
+// 路由实例
+const router = useRouter();
+
+// 处理点击事件
+const handleClick = (article: RecommendItem) => {
+  router.push(`/article/${article.id}/detail`);
+};
 </script>
 
 <style scoped lang="scss">
@@ -48,7 +56,7 @@ const recommends = [
     width: 100%;          // 宽度自适应父容器（侧边栏）
     box-sizing: border-box;// 盒模型：内边距/边框计入宽度，防止撑大容器
   }
-  
+
   .recommend-header {
     display: flex;        // flex弹性布局，实现图标+文字横向排列
     align-items: center;  // 垂直居中对齐
@@ -59,7 +67,7 @@ const recommends = [
     color: #303133;       // 标题主文字色
     padding-bottom: 6px;  // 底部内边距，与分割线拉开距离
   }
-  
+
   // 分割线样式 - 全站统一的短横线分割，与用户卡/公告栏/时钟栏完全一致
   .split-line {
     width: 40px;          // 短横线宽度，精致不突兀
@@ -67,14 +75,14 @@ const recommends = [
     background-color: #e5e7eb; // 分割线浅灰色，柔和不刺眼
     margin: 2px auto 16px;// 上下外边距+水平居中，与上下内容合理间距
   }
-  
+
   // 推荐文章列表内容区 样式
   .recommend-content {
     width: 100%;          // 宽度铺满卡片
     padding: 0 8px 12px;  // 左右内边距8px，底部内边距12px，顶部无间距
     box-sizing: border-box;// 盒模型规范，防止padding撑宽
   }
-  
+
   // 单个推荐文章项
   .recommend-item {
     display: flex;        // flex布局，实现封面图+文字区左右排列
@@ -89,13 +97,13 @@ const recommends = [
     transition: all 0.22s ease-in-out; // 悬浮过渡动画，丝滑无卡顿，全站统一动画时长
     box-sizing: border-box;// 盒模型规范
     width: 100%;          // 宽度铺满内容区
-  
+
     // 鼠标悬浮高亮效果 - 全站统一配色规则，无任何改动
     &:hover {
       background-color: #f9fafb; // 悬浮浅蓝背景色
       color: #409eff;            // 悬浮主题蓝文字色
     }
-  
+
     // 文章封面图容器样式
     .cover-box {
       width: 58px;        // 自定义调整的封面宽度
@@ -108,20 +116,20 @@ const recommends = [
       justify-content: center;
       overflow: hidden;   // 超出容器部分隐藏，防止封面图变形
     }
-  
+
     // 封面图片的样式
     .cover-img {
       width: 100%;        // 图片宽度铺满容器
       height: 100%;       // 图片高度铺满容器
       object-fit: cover;  // 图片等比例裁剪，保持宽高比，不拉伸变形
     }
-  
+
     // 无封面时的默认图标样式
     .default-icon {
       font-size: 24px;    // 默认图标尺寸
       color: #c0c4cc;     // 默认图标浅灰色，弱化显示不抢视觉焦点
     }
-  
+
     // 文章标题+时间 文字内容区域样式
     .info-box {
       flex: 1;            // 占满剩余宽度，自适应布局
@@ -130,7 +138,7 @@ const recommends = [
       gap: 4px;           // 标题与时间的间距
       overflow: hidden;   // 超出部分隐藏，配合标题省略使用
     }
-  
+
     // 文章标题样式
     .article-title {
       font-size: 14px;    // 标题字号
@@ -139,13 +147,13 @@ const recommends = [
       white-space: nowrap;// 强制单行显示
       overflow: hidden;   // 超出部分隐藏
       text-overflow: ellipsis; // 超长标题显示省略号...，防止撑爆布局
-  
+
       // 鼠标悬浮推荐项时，标题同步变色为主题蓝
       .recommend-item:hover & {
         color: #409eff;
       }
     }
-  
+
     // 文章更新时间样式
     .article-time {
       font-size: 12px;    // 时间字号更小，弱化展示
@@ -153,7 +161,7 @@ const recommends = [
       line-height: 1.4;   // 行高适配字号
     }
   }
-  
+
   // 最后一个推荐项 移除底部外边距，避免列表底部多余留白，优化视觉细节
   .recommend-item:last-child {
     margin-bottom: 0;
