@@ -96,7 +96,7 @@ const handleClick = (item: UserArticleTimeline) => {
 };
 
 onMounted(() => {
-  initTimelineData();
+  // initTimelineData();
 });
 </script>
 

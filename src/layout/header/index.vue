@@ -38,7 +38,7 @@
           <el-icon><Fries/></el-icon>
           <span>树洞</span>
         </el-menu-item>
-        <el-menu-item index="3-2">
+        <el-menu-item index="/user/unread-comments">
           <el-icon><Postcard/></el-icon>
           <span>留言板</span>
         </el-menu-item>
