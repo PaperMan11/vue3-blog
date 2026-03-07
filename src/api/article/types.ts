@@ -14,3 +14,10 @@ export interface ArticleHotRecommend {
   articleTitle: string;
   visitCount: number;
 }
+
+// 用户文章时间线
+export interface UserArticleTimeline {
+  id: number;
+  articleTitle: string;
+  createTime: string; // 时间格式为 'yyyy-MM-dd HH:mm:ss'
+}

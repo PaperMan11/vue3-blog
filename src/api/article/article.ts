@@ -35,10 +35,22 @@ export function getArticleList(params: any) {
   });
 }
 
-// 获取文章详情
-export function getArticleDetail(id: number) {
+// 获取用户文章时间线
+export function getArticleTimeline() {
   return request({
-    url: `/article/detail/${id}`,
+    url: '/article/timeline',
     method: 'get'
+  });
+}
+
+// 获取文章评论(分页)
+// params: articleId, pageNum, pageSize, sortType, targetCommentId(可选)
+// sortType: 1-按创建时间排序, 2-按点赞数排序
+// targetCommentId: 目标评论ID, 用于展开包含该评论的父评论(可选)
+export function getArticleComments(data: any) {
+  return request({
+    url: `/article/comment`,
+    method: 'post',
+    data
   });
 }

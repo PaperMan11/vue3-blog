@@ -5,153 +5,55 @@
       <!-- 文章容器 -->
       <div class="article-container">
         <!-- 文章主内容（包含头部和内容） -->
-        <ArticleMain :article-info="articleInfo" @like="handleLike" />
+        <ArticleMain :article-id="articleId" />
       </div>
     </div>
 
     <!-- 评论区域 -->
-    <ArticleComments
-      :comments="comments"
-      @comment-added="handleCommentAdded"
-    />
+    <ArticleComments :article-id="articleId" :target-comment-id="targetCommentId" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import ArticleMain from './components/ArticleMain.vue';
 import ArticleComments from './components/ArticleComments.vue';
+import { useRoute } from 'vue-router';
 
-// 1. 定义类型接口
-interface ArticleInfo {
-  title: string;
-  createdTime: string;
-  updatedTime: string;
-  author: string;
-  content: string;
-  views: number;
-  likes: number;
-  comments: number;
-}
-
-// 评论类型
-interface Comment {
-  id: number;
-  author: string;
-  content: string;
-  time: string;
-  images: string[];
-  replies?: Reply[];
-  replyCount?: number;
-  isExpanded?: boolean;
-}
-
-// 回复类型
-interface Reply {
-  id: number;
-  author: string;
-  content: string;
-  time: string;
-  replyTo: string;
-}
-
-// 2. 定义文章数据
-const articleInfo = ref<ArticleInfo>({
-  title: 'Vue3 + TS 实现Markdown文章展示',
-  createdTime: '2026-02-24',
-  updatedTime: '2026-02-25',
-  author: 'Vue开发者',
-  views: 1234,
-  likes: 567,
-  comments: 89,
-  content: `
-# Markdown 一级标题
-这是用 Vue3 + TypeScript 渲染的Markdown文章示例。
-
-## **二级标题 - 代码高亮演示**
-### \`三级标题 - TypeScript示例\`
-\`\`\`typescript
-// Vue3 + TS 示例代码
-import { ref, computed } from 'vue';
-
-const count = ref<number>(0);
-const doubleCount = computed(() => count.value * 2);
-
-const increment = (): void => {
-  count.value++;
+// 从URL哈希中获取评论ID
+const getTargetCommentId = () => {
+  const hash = window.location.hash;
+  if (hash) {
+    // 解析哈希值，格式为 #comment-123
+    const match = hash.match(/^#comment-(\d+)$/);
+    if (match && match[1]) {
+      return parseInt(match[1]);
+    }
+  }
+  return undefined;
 };
-\`\`\`
 
-## 二级标题 - 列表示例
-### 三级标题 - 无序列表
-- Vue3 特性
-  - **组合式API**
-  - TypeScript支持
-  - \`更小的体积\`
+// 目标评论ID（从URL哈希中获取）
+const targetCommentId = ref<number | undefined>(getTargetCommentId());
 
-### 三级标题 - 有序列表
-1. 初始化项目
-2. 安装依赖
-3. 编写代码
+// 从路由参数中获取文章ID
+const route = useRoute();
+const articleId = ref<number>(Number(route.params.id) || 0);
 
+// 监听URL哈希变化
+const handleHashChange = () => {
+  targetCommentId.value = getTargetCommentId();
+};
 
-- [X] 任务项1
-- [ ] 任务项2
-- [ ] 任务项3
-- [ ] 任务项4
-
-  `.trim()
+// 组件挂载时添加哈希变化监听
+onMounted(() => {
+  window.addEventListener('hashchange', handleHashChange);
 });
 
-// 4. 评论相关数据
-const comments = ref<Comment[]>([
-  {
-    id: 1,
-    author: '用户1',
-    content: '这篇文章写得真好！😊',
-    time: '2026-03-01 10:00',
-    images: [],
-    replies: [
-      {
-        id: 101,
-        author: '用户3',
-        content: '是的，我也这么认为',
-        time: '2026-03-01 11:00',
-        replyTo: '用户1'
-      },
-      {
-        id: 102,
-        author: '用户4',
-        content: '学到了很多',
-        time: '2026-03-01 12:00',
-        replyTo: '用户1'
-      }
-    ],
-    replyCount: 2,
-    isExpanded: false
-  },
-  {
-    id: 2,
-    author: '用户2',
-    content: '学习了很多新知识',
-    time: '2026-03-02 14:30',
-    images: [],
-    replies: [],
-    replyCount: 0,
-    isExpanded: false
-  }
-]);
-
-// 处理评论添加
-const handleCommentAdded = (comment: Comment) => {
-  comments.value.unshift(comment);
-  articleInfo.value.comments++;
-};
-
-// 处理点赞
-const handleLike = (likes: number) => {
-  articleInfo.value.likes = likes;
-};
+// 组件卸载时移除哈希变化监听
+onUnmounted(() => {
+  window.removeEventListener('hashchange', handleHashChange);
+});
 </script>
 
 <style scoped>

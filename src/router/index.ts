@@ -59,6 +59,18 @@ export const constantRoutes:RouteRecordRaw[] = [
         component: () => import('@/views/user/profile/index.vue'),
         name: 'UserProfile',
         meta: { title: '个人中心' }
+      },
+      {
+        path: '/user/timeline',
+        component: () => import('@/views/user/timeline/index.vue'),
+        name: 'UserTimeline',
+        meta: { title: '时间线' }
+      },
+      {
+        path: '/user/unread-comments',
+        component: () => import('@/views/user/unread-comments/index.vue'),
+        name: 'UserUnreadComments',
+        meta: { title: '未读评论' }
       }
     ]
   },

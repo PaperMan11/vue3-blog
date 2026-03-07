@@ -8,20 +8,18 @@ export interface IUserState {
   username: string;
   nickname: string;
   email: string;
-  bio: string;
   website: string;
   avatar: string;
   introduction: string;
   roles: string[];
 }
 
-const useUserStore = defineStore('user', () => {
+export const useUserStore = defineStore('user', () => {
   const token = ref<string>(getToken() || '');
   const userId = ref<string>('');
   const username = ref<string>('');
   const nickname = ref<string>('');
   const email = ref<string>('');
-  const bio = ref<string>('');
   const website = ref<string>('');
   const avatar = ref<string>('');
   const introduction = ref<string>('');
@@ -34,7 +32,6 @@ const useUserStore = defineStore('user', () => {
       username: username.value,
       nickname: nickname.value,
       email: email.value,
-      bio: bio.value,
       website: website.value,
       avatar: avatar.value,
       introduction: introduction.value,
@@ -55,7 +52,6 @@ const useUserStore = defineStore('user', () => {
     username.value = '';
     nickname.value = '';
     email.value = '';
-    bio.value = '';
     website.value = '';
     avatar.value = '';
     introduction.value = '';
@@ -69,7 +65,6 @@ const useUserStore = defineStore('user', () => {
     username.value = '';
     nickname.value = '';
     email.value = '';
-    bio.value = '';
     website.value = '';
     avatar.value = '';
     introduction.value = '';
@@ -86,7 +81,6 @@ const useUserStore = defineStore('user', () => {
         username.value = 'user123';
         nickname.value = '用户123';
         email.value = 'user123@example.com';
-        bio.value = '这是一个个人简介';
         website.value = 'https://example.com';
         avatar.value = '';
         introduction.value = 'I am a Vue.js developer.';
@@ -96,7 +90,6 @@ const useUserStore = defineStore('user', () => {
           username: username.value,
           nickname: nickname.value,
           email: email.value,
-          bio: bio.value,
           website: website.value,
           avatar: avatar.value,
           introduction: introduction.value,
@@ -123,7 +116,6 @@ const useUserStore = defineStore('user', () => {
     username,
     nickname,
     email,
-    bio,
     website,
     avatar,
     introduction,

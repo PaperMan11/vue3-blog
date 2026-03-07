@@ -2,49 +2,67 @@
   <div class="article-main">
     <div class="article-content">
       <div class="content-main">
-        <!-- 文章头部信息 -->
-        <div class="article-header">
-          <h1 class="article-title">{{ articleInfo.title }}</h1>
-          <div class="article-meta">
-            <div class="article-author">
-              <div>发布：{{ articleInfo.createdTime }}</div>
-              <div>更新：{{ articleInfo.updatedTime }}</div>
-              <div>作者：{{ articleInfo.author }}</div>
-            </div>
-            <div class="article-stat">
-              <div class="stat-item">
-                <svg-icon icon-class="reading" class="stat-icon" />
-                <span>{{ articleInfo.views }}</span>
+        <!-- 加载状态 -->
+        <div v-if="loading" class="loading-container">
+          <el-skeleton :rows="10" animated />
+        </div>
+
+        <!-- 错误信息 -->
+        <div v-else-if="error" class="error-container">
+          <el-alert
+            :title="error"
+            type="error"
+            show-icon
+            :closable="false"
+          />
+        </div>
+
+        <!-- 文章内容 -->
+        <template v-else>
+          <!-- 文章头部信息 -->
+          <div class="article-header">
+            <h1 class="article-title">{{ articleInfo.title }}</h1>
+            <div class="article-meta">
+              <div class="article-author">
+                <div>发布：{{ articleInfo.createdTime }}</div>
+                <div>更新：{{ articleInfo.updatedTime }}</div>
+                <div>作者：{{ articleInfo.author }}</div>
               </div>
-              <div class="stat-item">
-                <svg-icon icon-class="comment" class="stat-icon" />
-                <span>{{ articleInfo.comments }}</span>
-              </div>
-              <div class="stat-item like-section" :class="{ 'liked': isLiked }">
-                <svg-icon
-                  :icon-class="isLiked ? 'like' : 'like-selected'"
-                  class="stat-icon like-icon"
-                  @click="handleLike"
-                />
-                <span>{{ articleInfo.likes }}</span>
+              <div class="article-stat">
+                <div class="stat-item">
+                  <svg-icon icon-class="reading" class="stat-icon" />
+                  <span>{{ articleInfo.views }}</span>
+                </div>
+                <div class="stat-item">
+                  <svg-icon icon-class="comment" class="stat-icon" />
+                  <span>{{ articleInfo.comments }}</span>
+                </div>
+                <div class="stat-item like-section" :class="{ 'liked': isLiked }">
+                  <svg-icon
+                    :icon-class="isLiked ? 'like' : 'like-selected'"
+                    class="stat-icon like-icon"
+                    @click="handleLike"
+                  />
+                  <span>{{ articleInfo.likes }}</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Markdown内容渲染区域 -->
-        <div
-          class="markdown-content"
-          v-if="isRendererReady"
-          v-html="renderedMarkdown"
-        ></div>
+          <!-- Markdown内容渲染区域 -->
+          <div
+            class="markdown-content"
+            v-if="isRendererReady"
+            v-html="renderedMarkdown"
+          ></div>
+        </template>
       </div>
 
       <!-- 侧边目录 -->
       <div class="content-sidebar">
         <div class="sidebar">
           <div class="sidebar-title">目录</div>
-          <ul class="toc-list" v-if="tocData.length">
+          <ul class="toc-list" v-if="tocData.length && !loading && !error">
             <li
               v-for="(item, index) in tocData"
               :key="index"
@@ -59,7 +77,10 @@
               </a>
             </li>
           </ul>
-          <div class="empty-toc" v-else>暂无目录</div>
+          <div class="empty-toc" v-else-if="!loading && !error">暂无目录</div>
+          <div v-else-if="loading" class="loading-toc">
+            <el-skeleton :rows="5" animated />
+          </div>
         </div>
       </div>
     </div>
@@ -71,6 +92,7 @@ import { ref, computed, onMounted } from 'vue';
 import { marked, Renderer, type Tokens } from 'marked';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.min.css';
+import { getArticleById } from '@/api/article/article';
 
 // 文章信息类型
 interface ArticleInfo {
@@ -92,20 +114,68 @@ interface TocItem {
 }
 
 const props = defineProps<{
-  articleInfo: ArticleInfo;
+  targetCommentId?: number;
+  articleId: number;
 }>();
 
-// 定义点赞事件
-const emit = defineEmits<{
-  (e: 'like', likes: number): void;
-}>();
+// 定义文章数据
+const articleInfo = ref<ArticleInfo>({
+  title: 'Vue3 + TS 实现Markdown文章展示',
+  createdTime: '2026-02-24',
+  updatedTime: '2026-02-25',
+  author: 'Vue开发者',
+  views: 1234,
+  likes: 567,
+  comments: 89,
+  content: `
+# Markdown 一级标题
+这是用 Vue3 + TypeScript 渲染的Markdown文章示例。
+
+## **二级标题 - 代码高亮演示**
+### \`三级标题 - TypeScript示例\`
+\`\`\`typescript
+// Vue3 + TS 示例代码
+import { ref, computed } from 'vue';
+
+const count = ref<number>(0);
+const doubleCount = computed(() => count.value * 2);
+
+const increment = (): void => {
+  count.value++;
+};
+\`\`\`
+
+## 二级标题 - 列表示例
+### 三级标题 - 无序列表
+- Vue3 特性
+  - **组合式API**
+  - TypeScript支持
+  - \`更小的体积\`
+
+### 三级标题 - 有序列表
+1. 初始化项目
+2. 安装依赖
+3. 编写代码
+
+
+- [X] 任务项1
+- [ ] 任务项2
+- [ ] 任务项3
+- [ ] 任务项4
+
+  `.trim()
+});
+
+// 加载状态
+const loading = ref(true);
+// 错误信息
+const error = ref('');
 
 // 点赞
 const isLiked = ref(false); // 是否已点赞
 const handleLike = () => {
   // 模拟点赞操作（实际应发送请求到后端）
-  const likes = isLiked.value ? props.articleInfo.likes - 1 : props.articleInfo.likes + 1;
-  emit('like', likes); // 触发点赞事件
+  articleInfo.value.likes = isLiked.value ? articleInfo.value.likes - 1 : articleInfo.value.likes + 1;
   isLiked.value = !isLiked.value;
 };
 
@@ -170,13 +240,43 @@ marked.setOptions({
 // 计算属性：解析Markdown为HTML（仅当渲染器就绪后执行）
 const renderedMarkdown = computed(() => {
   if (!isRendererReady.value) return ''; // 未就绪时返回空
-  return marked.parse(props.articleInfo.content);
+  return marked.parse(articleInfo.value.content);
 });
 
-// onMounted中打开开关（确保DOM挂载后再渲染Markdown）
+// 查询文章
+const queryArticle = async (id: number) => {
+  try {
+    loading.value = true;
+    error.value = '';
+    // todo 使用 getArticleById 或 getArticleDetail 获取文章详情
+    // const response = await getArticleById(id);
+    // articleInfo.value = response.data;
+    // // 重新解析目录
+    // parseToc();
+  } catch (err) {
+    console.error('查询文章失败:', err);
+    error.value = '获取文章详情失败，请刷新页面重试';
+  } finally {
+    loading.value = false;
+    // 确保渲染器就绪
+    isRendererReady.value = true;
+  }
+};
+
+// 解析目录
+const parseToc = () => {
+  // 重置目录数据和计数器
+  tocData.value = [];
+  titleIndex = 0;
+  // 重新解析Markdown内容以生成目录
+  marked.parse(articleInfo.value.content);
+};
+
+// onMounted中获取文章数据
 onMounted(() => {
-  isRendererReady.value = true;
-  // todo: 点赞状态初始化
+  if (props.articleId) {
+    queryArticle(props.articleId);
+  }
 });
 
 // 处理目录点击

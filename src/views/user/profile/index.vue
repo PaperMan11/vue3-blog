@@ -120,7 +120,7 @@ const initUserForm = () => {
     username: userInfo.username || '',
     email: userInfo.email || '',
     nickname: userInfo.nickname || '',
-    bio: userInfo.bio || '',
+    introduction: userInfo.introduction || '',
     website: userInfo.website || '',
     avatar: userInfo.avatar || ''
   });

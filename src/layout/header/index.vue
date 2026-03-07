@@ -16,7 +16,7 @@
           <el-icon><Files/></el-icon>
           <span>归档</span>
         </template>
-        <el-menu-item index="2-1">
+        <el-menu-item index="/user/timeline">
           <el-icon><Clock/></el-icon>
           <span>时间轴</span>
         </el-menu-item>
