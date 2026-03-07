@@ -84,6 +84,11 @@ export const constantRoutes:RouteRecordRaw[] = [
     component: () => import('@/views/error-page/401.vue'),
     meta: { hidden: true }
   },
+  {
+    path: '/under-development',
+    component: () => import('@/views/error-page/under-development.vue'),
+    meta: { hidden: true }
+  },
   // 404 page must be placed at the end !!!
   { path: '/:pathMatch(.*)*', redirect: '/404', meta: { hidden: true }}
 ]

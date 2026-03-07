@@ -34,7 +34,7 @@
           <el-icon><IceCreamRound/></el-icon>
           <span>其他</span>
         </template>
-        <el-menu-item index="3-1">
+        <el-menu-item index="/under-development">
           <el-icon><Fries/></el-icon>
           <span>树洞</span>
         </el-menu-item>
