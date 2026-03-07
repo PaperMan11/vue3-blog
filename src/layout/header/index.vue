@@ -24,7 +24,7 @@
           <el-icon><Folder/></el-icon>
           <span>分类</span>
         </el-menu-item>
-        <el-menu-item index="2-3">
+        <el-menu-item index="/article/tag">
           <el-icon><CollectionTag /></el-icon>
           <span>标签</span>
         </el-menu-item>

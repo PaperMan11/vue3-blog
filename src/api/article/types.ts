@@ -21,3 +21,14 @@ export interface UserArticleTimeline {
   articleTitle: string;
   createTime: string; // 时间格式为 'yyyy-MM-dd HH:mm:ss'
 }
+
+
+
+// tag枚举
+export const TagTypesArray: Array<'primary' | 'success' | 'info' | 'warning' | 'danger'> = [
+  'primary',
+  'success',
+  'info',
+  'warning',
+  'danger',
+]

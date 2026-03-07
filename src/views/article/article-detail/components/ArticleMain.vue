@@ -47,6 +47,18 @@
                 </div>
               </div>
             </div>
+            <!-- 文章标签 -->
+            <div class="article-tags" v-if="articleInfo.tags && articleInfo.tags.length > 0">
+              <el-tag
+                v-for="(tag, index) in articleInfo.tags"
+                :key="index"
+                size="small"
+                effect="light"
+                :type="TagTypesArray[index % TagTypesArray.length]"
+              >
+                {{ tag }}
+              </el-tag>
+            </div>
           </div>
 
           <!-- Markdown内容渲染区域 -->
@@ -93,6 +105,7 @@ import { marked, Renderer, type Tokens } from 'marked';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.min.css';
 import { getArticleById } from '@/api/article/article';
+import { TagTypesArray } from '@/api/article/types';
 
 // 文章信息类型
 interface ArticleInfo {
@@ -104,6 +117,7 @@ interface ArticleInfo {
   views: number;
   likes: number;
   comments: number;
+  tags: string[];
 }
 
 // 目录项类型
@@ -127,6 +141,7 @@ const articleInfo = ref<ArticleInfo>({
   views: 1234,
   likes: 567,
   comments: 89,
+  tags: ['Vue3', 'TypeScript', 'Markdown', '前端开发'],
   content: `
 # Markdown 一级标题
 这是用 Vue3 + TypeScript 渲染的Markdown文章示例。
@@ -348,6 +363,13 @@ const handleTocClick = (e: Event) => {
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
+}
+
+.article-tags {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
 }
 
 .article-stat {
@@ -579,6 +601,8 @@ const handleTocClick = (e: Event) => {
     gap: 12px;
     width: 100%;
   }
+
+
 
   .article-stat {
     padding-left: 0;

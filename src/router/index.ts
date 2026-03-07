@@ -55,6 +55,18 @@ export const constantRoutes:RouteRecordRaw[] = [
         meta: { title: '分类详情' }
       },
       {
+        path: '/article/tag',
+        component: () => import('@/views/article/article-tag/tag/index.vue'),
+        name: 'ArticleTag',
+        meta: { title: '文章标签' }
+      },
+      {
+        path: '/article/tag/:id',
+        component: () => import('@/views/article/article-tag/tag-detail/index.vue'),
+        name: 'TagDetail',
+        meta: { title: '标签详情' }
+      },
+      {
         path: '/user/profile',
         component: () => import('@/views/user/profile/index.vue'),
         name: 'UserProfile',
