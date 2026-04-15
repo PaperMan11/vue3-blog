@@ -12,7 +12,18 @@
 </template>
 
 <script setup lang="ts">
-const noticeText = '本站站所有文章均为原创内容，2026年全新改版上线，优化了阅读体验和移动端适配，感谢各位朋友的关注与支持，博客会持续更新优质内容！站所有文章均为原创内容，2026年全新改版上线，优化了阅读体验和移动端适配，感谢各位朋友的关注与支持，博客会持续更新优质内容！所有文章均为原创内容，2026年全新改版上线，优化了阅读体验和移动端适配，感谢各位朋友的关注与支持，博客会持续更新优质内容！2026年全新改版上线，优化了阅读体验和移动端适配，感谢各位朋友的关注与支持，博客会持续更新优质内容2026年全新改版上线，优化了阅读体验和移动端适配，感谢各位朋友的关注与支持，博客会持续更新优质内容'
+import { ref, onMounted } from 'vue'
+import { getNotice } from '@/api/home/home'
+const noticeText = ref('')
+
+onMounted(() => {
+  getNotice().then(res => {
+    noticeText.value = res.data?.content || '本站暂无公告信息，敬请期待～'
+  }).catch(err => {
+    ElMessage.error(err.message || 'Error')
+  })
+})
+
 </script>
 
 <style scoped lang="scss">
@@ -45,7 +56,7 @@ const noticeText = '本站站所有文章均为原创内容，2026年全新改�
 }
 
 .notice-content {
-  text-align: center;
+  text-align: justify;
   padding: 4px 12px 8px;
 }
 </style>

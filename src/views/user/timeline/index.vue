@@ -11,7 +11,7 @@
           <el-timeline-item
             v-for="item in group.articles"
             :key="item.id"
-            :timestamp="item.createTime"
+            :timestamp="formatTime(item.createdTime)"
             placement="top"
             type="primary"
             size="large"
@@ -19,9 +19,9 @@
             <div class="timeline-card" @click="handleClick(item)">
               <div class="card-content">
                 <h4 class="article-title">
-                  {{ item.articleTitle }}
+                  {{ item.title }}
                 </h4>
-                <p class="article-time">{{ item.createTime }}</p>
+                <p class="article-time">{{ formatTime(item.createdTime) }}</p>
               </div>
             </div>
           </el-timeline-item>
@@ -39,34 +39,21 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { getArticleTimeline } from '@/api/article/article';
-import type { UserArticleTimeline } from '@/api/article/types';
+import type { Article } from '@/api/article/types';
+import { formatTime } from '@/utils/time';
 
 const userStore = useUserStore();
 const router = useRouter();
-
-const exampleTimelineData: UserArticleTimeline[] = [
-  { id: 1, articleTitle: '示例文章1', createTime: '2026-03-06 14:06:04' },
-  { id: 2, articleTitle: '示例文章2', createTime: '2026-03-03 14:06:04' },
-  { id: 3, articleTitle: '示例文章3', createTime: '2025-12-02 14:06:04' },
-  { id: 4, articleTitle: '示例文章4', createTime: '2025-11-15 10:30:00' },
-  { id: 5, articleTitle: '示例文章5', createTime: '2024-09-20 09:15:00' },
-  { id: 6, articleTitle: '示例文章6', createTime: '2024-08-10 16:45:00' },
-  { id: 7, articleTitle: '示例文章7', createTime: '2024-07-05 12:30:00' },
-  { id: 8, articleTitle: '示例文章8', createTime: '2024-06-20 18:00:00' },
-  { id: 9, articleTitle: '示例文章9', createTime: '2024-05-10 10:00:00' },
-  { id: 10, articleTitle: '示例文章10', createTime: '2024-04-01 15:45:00' },
-];
-
 // 获取用户文章时间线
-const timelineData = ref<UserArticleTimeline[]>(exampleTimelineData);
+const timelineData = ref<Article[]>([]);
 
 // 按年份分组文章数据
 const groupedTimelineData = computed(() => {
-  const grouped: Record<string, UserArticleTimeline[]> = {};
+  const grouped: Record<string, Article[]> = {};
 
   timelineData.value.forEach(item => {
     // 提取年份
-    const year = item.createTime.substring(0, 4);
+    const year = formatTime(item.createdTime).substring(0, 4);
     if (!grouped[year]) {
       grouped[year] = [];
     }
@@ -84,19 +71,19 @@ const groupedTimelineData = computed(() => {
 
 const initTimelineData = async () => {
   // 获取用户文章时间线
-  getArticleTimeline().then(data => {
-    timelineData.value = data as any;
+  getArticleTimeline().then(res => {
+    timelineData.value = res.data;
   })
 };
 
-const handleClick = (item: UserArticleTimeline) => {
+const handleClick = (item: Article) => {
   // 跳转到文章详情页(另开页面)
   // router.push(`/article/${item.id}/detail`);
   window.open(`/article/${item.id}/detail`, '_blank');
 };
 
 onMounted(() => {
-  // initTimelineData();
+  initTimelineData();
 });
 </script>
 

@@ -5,12 +5,12 @@
       <!-- 文章容器 -->
       <div class="article-container">
         <!-- 文章主内容（包含头部和内容） -->
-        <ArticleMain :article-id="articleId" />
+        <ArticleMain :article-id="articleId" @article-loaded="handleArticleLoaded" />
       </div>
     </div>
 
     <!-- 评论区域 -->
-    <ArticleComments :article-id="articleId" :target-comment-id="targetCommentId" />
+    <ArticleComments :article-id="articleId" :target-comment-id="targetCommentId" :author-id="articleAuthorId" />
   </div>
 </template>
 
@@ -39,6 +39,13 @@ const targetCommentId = ref<number | undefined>(getTargetCommentId());
 // 从路由参数中获取文章ID
 const route = useRoute();
 const articleId = ref<number>(Number(route.params.id) || 0);
+// 文章作者ID
+const articleAuthorId = ref<number>(0);
+
+// 接收文章加载完成事件，获取作者ID
+const handleArticleLoaded = (article: any) => {
+  articleAuthorId.value = article.authorId;
+};
 
 // 监听URL哈希变化
 const handleHashChange = () => {

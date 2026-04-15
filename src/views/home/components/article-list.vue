@@ -23,13 +23,13 @@
 
         <!-- 右侧数据统计 -->
         <div class="item-right">
-          <span class="stat-text">{{ value.stats.views }}</span>
+          <span class="stat-text">{{ value.views }}</span>
           <span class="divider">/</span>
-          <span class="stat-text">{{ value.stats.likes }}</span>
+          <span class="stat-text">{{ value.likes }}</span>
           <span class="divider">/</span>
-          <span class="stat-text">{{ value.stats.comments }}</span>
+          <span class="stat-text">{{ value.comments }}</span>
           <span class="divider">|</span>
-          <span class="time-text">{{ formatTime(value.createdAt, 'YYYY-MM-DD') }}</span>
+          <span class="time-text">{{ formatTime(value.createdTime, 'YYYY-MM-DD') }}</span>
         </div>
       </div>
     </div>
@@ -53,71 +53,66 @@
 import { ref } from 'vue'
 import { formatTime } from '@/utils/time';
 import { useRouter } from 'vue-router';
+import { listHomeArticle } from '@/api/home/home';
+import type { Article } from '@/api/article/types';
 
 // 路由实例
 const router = useRouter();
 
-interface ArticleStats {
-  views: number;
-  likes: number;
-  comments: number;
-  favorites: number;
-}
-interface ArticleItem {
-  id: number;
-  title: string;
-  summary: string;
-  tags: string[];
-  author: string;
-  createdAt: number;
-  updatedAt: number;
-  stats: ArticleStats;
-}
-
 // 分页相关
 const page = ref(1);
-const pageSize = ref(10);
-const total = ref(4028);
-const activeTab = ref('recent');
+const pageSize = ref(20);
+const total = ref(0);
+const activeTab = ref<'recent' | 'vote' | 'hot'>('hot');
 
 
-// 模拟不同标签对应的文章列表数据
-const articleData = {
-  // 最近发布的文章
-  recent: [
-    { id: 1, title: '《多课网》企业级前端项目实战教程（Next.js + TS + AntD）', summary: '', tags: [], author: '作者A', createdAt: 1768805022, updatedAt: 1768805022, stats: { views: 23, likes: 56, comments: 55, favorites: 0 } },
-    { id: 2, title: 'Golang 遥控器Context', summary: '', tags: [], author: '作者A', createdAt: 1768794022, updatedAt: 1768794022, stats: { views: 34, likes: 0, comments: 0, favorites: 0 } },
-    { id: 3, title: '分享一个我自己在用TTS，好用就算了，它还是免费的！', summary: '', tags: [], author: '作者A', createdAt: 1768783022, updatedAt: 1768783022, stats: { views: 25, likes: 0, comments: 0, favorites: 0 } },
-    { id: 4, title: 'Golang 常用数据结构详解（偏工程 & 底层）', summary: '', tags: [], author: '作者A', createdAt: 1768773022, updatedAt: 1768773022, stats: { views: 34, likes: 2, comments: 3, favorites: 0 } },
-    { id: 5, title: 'go系统调用阻塞的处理', summary: '', tags: [], author: '作者A', createdAt: 1768763022, updatedAt: 1768763022, stats: { views: 51, likes: 44, comments: 33, favorites: 0 } },
-  ],
-  // 投票相关的文章
-  vote: [
-    { id: 6, title: '2026前端框架投票：Vue vs React vs Svelte', summary: '', tags: [], author: '作者B', createdAt: 1768805022, updatedAt: 1768805022, stats: { views: 123, likes: 89, comments: 45, favorites: 0 } },
-    { id: 7, title: '投票选出你最喜欢的Go开发工具', summary: '', tags: [], author: '作者B', createdAt: 1768794022, updatedAt: 1768794022, stats: { views: 98, likes: 67, comments: 23, favorites: 0 } },
-    { id: 8, title: '年度技术博客投票活动开始啦！', summary: '', tags: [], author: '作者B', createdAt: 1768783022, updatedAt: 1768783022, stats: { views: 76, likes: 54, comments: 18, favorites: 0 } },
-  ],
-  // 热门文章
-  hot: [
-    { id: 9, title: '2026年必学的10个前端新特性', summary: '', tags: [], author: '作者C', createdAt: 1768805022, updatedAt: 1768805022, stats: { views: 1234, likes: 567, comments: 234, favorites: 0 } },
-    { id: 10, title: 'Golang高并发编程实战（10w+阅读）', summary: '', tags: [], author: '作者C', createdAt: 1768794022, updatedAt: 1768794022, stats: { views: 9876, likes: 4321, comments: 890, favorites: 0 } },
-    { id: 11, title: '从0到1搭建企业级微服务架构', summary: '', tags: [], author: '作者C', createdAt: 1768783022, updatedAt: 1768783022, stats: { views: 8765, likes: 3210, comments: 789, favorites: 0 } },
-  ]
-};
+// // 模拟不同标签对应的文章列表数据
+// const articleData = {
+//   // 最近发布的文章
+//   recent: [
+//     { id: 1, title: '《多课网》企业级前端项目实战教程（Next.js + TS + AntD）', summary: '', tags: [], author: '作者A', createdAt: 1768805022, updatedAt: 1768805022, stats: { views: 23, likes: 56, comments: 55, favorites: 0 } },
+//     { id: 2, title: 'Golang 遥控器Context', summary: '', tags: [], author: '作者A', createdAt: 1768794022, updatedAt: 1768794022, stats: { views: 34, likes: 0, comments: 0, favorites: 0 } },
+//     { id: 3, title: '分享一个我自己在用TTS，好用就算了，它还是免费的！', summary: '', tags: [], author: '作者A', createdAt: 1768783022, updatedAt: 1768783022, stats: { views: 25, likes: 0, comments: 0, favorites: 0 } },
+//     { id: 4, title: 'Golang 常用数据结构详解（偏工程 & 底层）', summary: '', tags: [], author: '作者A', createdAt: 1768773022, updatedAt: 1768773022, stats: { views: 34, likes: 2, comments: 3, favorites: 0 } },
+//     { id: 5, title: 'go系统调用阻塞的处理', summary: '', tags: [], author: '作者A', createdAt: 1768763022, updatedAt: 1768763022, stats: { views: 51, likes: 44, comments: 33, favorites: 0 } },
+//   ],
+//   // 投票相关的文章
+//   vote: [
+//     { id: 6, title: '2026前端框架投票：Vue vs React vs Svelte', summary: '', tags: [], author: '作者B', createdAt: 1768805022, updatedAt: 1768805022, stats: { views: 123, likes: 89, comments: 45, favorites: 0 } },
+//     { id: 7, title: '投票选出你最喜欢的Go开发工具', summary: '', tags: [], author: '作者B', createdAt: 1768794022, updatedAt: 1768794022, stats: { views: 98, likes: 67, comments: 23, favorites: 0 } },
+//     { id: 8, title: '年度技术博客投票活动开始啦！', summary: '', tags: [], author: '作者B', createdAt: 1768783022, updatedAt: 1768783022, stats: { views: 76, likes: 54, comments: 18, favorites: 0 } },
+//   ],
+//   // 热门文章
+//   hot: [
+//     { id: 9, title: '2026年必学的10个前端新特性', summary: '', tags: [], author: '作者C', createdAt: 1768805022, updatedAt: 1768805022, stats: { views: 1234, likes: 567, comments: 234, favorites: 0 } },
+//     { id: 10, title: 'Golang高并发编程实战（10w+阅读）', summary: '', tags: [], author: '作者C', createdAt: 1768794022, updatedAt: 1768794022, stats: { views: 9876, likes: 4321, comments: 890, favorites: 0 } },
+//     { id: 11, title: '从0到1搭建企业级微服务架构', summary: '', tags: [], author: '作者C', createdAt: 1768783022, updatedAt: 1768783022, stats: { views: 8765, likes: 3210, comments: 789, favorites: 0 } },
+//   ]
+// };
 
-const currentArticleList = computed(() => {
-  return articleData[activeTab.value as keyof typeof articleData];
-});
+// const currentArticleList = computed(() => {
+//   return articleData[activeTab.value as keyof typeof articleData];
+// });
+
+const currentArticleList = ref<Article[]>([]);
 
 // 切换标签方法
-const switchTab = (tab: string) => {
+const switchTab = (tab: 'recent' | 'vote' | 'hot') => {
   if (activeTab.value === tab) return;
   activeTab.value = tab;
   page.value = 1; // 切换标签时重置页码为第一页
-  // 模拟请求对应标签的文章列表（实际项目中替换为接口调用）
-  console.log(`切换到【${tab === 'recent' ? '最近' : tab === 'vote' ? '投票' : '热门'}】标签`);
-
   // todo 实际项目调用接口
+  listHomeArticle({
+    page: page.value,
+    pageSize: pageSize.value,
+    tab: tab
+  }).then(res => {
+    const { total: totalCount, articles } = res.data || {};
+    total.value = totalCount || 0;
+    currentArticleList.value = articles || [];
+  }).catch(err => {
+    ElMessage.error(err.message || 'Error')
+  })
 };
 
 const handleCurrentChange = (val: number) => {
@@ -127,9 +122,13 @@ const handleCurrentChange = (val: number) => {
 };
 
 // 处理点击事件
-const handleClick = (article: ArticleItem) => {
+const handleClick = (article: Article) => {
   router.push(`/article/${article.id}/detail`);
 };
+
+onMounted(() => {
+  switchTab('recent');
+})
 </script>
 
 <style scoped lang="scss">

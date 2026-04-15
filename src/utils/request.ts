@@ -1,11 +1,8 @@
 import axios from 'axios';
-import { getToken } from '@/utils/auth';
-import useUserStore from '@/stores/user';
+import { getToken, removeToken } from '@/utils/auth';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
 console.log('import.meta.env=', import.meta.env);
-
-const userStore = useUserStore();
 
 // create an axios instance
 const service = axios.create({
@@ -18,8 +15,9 @@ const service = axios.create({
 service.interceptors.request.use(
   config => {
     // do something before request is sent
-    if (userStore.token) {
-      config.headers['Authorization'] = `Bearer ${getToken()}`
+    const token = getToken();
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`
     }
     return config;
   },
@@ -47,11 +45,11 @@ service.interceptors.response.use(
 
     // if the custom code is not 0, it is judged as an error.
     if (res.code !== 0) {
-      ElMessage({
-        message: res.message || 'Error',
-        type: 'error',
-        duration: 5 * 1000
-      });
+      // ElMessage({
+      //   message: res.message || 'Error',
+      //   type: 'error',
+      //   duration: 5 * 1000
+      // });
 
       // 50008: Illegal token; 50012: Other clients logged in; 50014: Token expired;
       if (res.code === 50008 || res.code === 50012 || res.code === 50014) {
@@ -61,21 +59,21 @@ service.interceptors.response.use(
           cancelButtonText: 'Cancel',
           type: 'warning'
         }).then(() => {
-          userStore.resetToken();
+          removeToken();
           location.reload();
         });
       }
-      return Promise.reject(new Error(res.message || 'Error'));
+      return Promise.reject(new Error(res.msg || 'Error'));
     } else {
       return res;
     }
   },
   error => {
-    ElMessage({
-      message: error.message,
-      type: 'error',
-      duration: 5 * 1000
-    });
+    // ElMessage({
+    //   message: error.message,
+    //   type: 'error',
+    //   duration: 5 * 1000
+    // });
     return Promise.reject(error);
   }
 );

@@ -24,10 +24,10 @@
           <el-icon><Folder/></el-icon>
           <span>分类</span>
         </el-menu-item>
-        <el-menu-item index="/article/tag">
+        <!-- <el-menu-item index="/article/tag">
           <el-icon><CollectionTag /></el-icon>
           <span>标签</span>
-        </el-menu-item>
+        </el-menu-item> -->
       </el-sub-menu>
       <el-sub-menu index="3">
         <template #title>
@@ -60,7 +60,7 @@
           @command="toPage"
         >
           <div class="user-avatar">
-            <el-avatar style="cursor: pointer;" :src="avatarUrl"/>
+            <el-avatar style="cursor: pointer;" :src="avatarUrl">{{ userName }}</el-avatar>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
@@ -98,6 +98,7 @@ const activeIndex = ref('/home')
 
 // 头像地址
 const avatarUrl = ref(userStore.avatar)
+const userName = ref(userStore.username)
 // 是否登录状态
 const isLoggedIn = ref(userStore.userId.length > 0)
 

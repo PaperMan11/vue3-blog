@@ -121,7 +121,6 @@ const initUserForm = () => {
     email: userInfo.email || '',
     nickname: userInfo.nickname || '',
     introduction: userInfo.introduction || '',
-    website: userInfo.website || '',
     avatar: userInfo.avatar || ''
   });
 };

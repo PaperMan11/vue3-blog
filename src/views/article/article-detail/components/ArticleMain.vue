@@ -24,9 +24,9 @@
             <h1 class="article-title">{{ articleInfo.title }}</h1>
             <div class="article-meta">
               <div class="article-author">
-                <div>发布：{{ articleInfo.createdTime }}</div>
-                <div>更新：{{ articleInfo.updatedTime }}</div>
-                <div>作者：{{ articleInfo.author }}</div>
+                <div>发布：{{ formatTime(articleInfo.createdTime, 'YYYY-MM-DD HH:mm:ss') }}</div>
+                <div>更新：{{ formatTime(articleInfo.updatedTime, 'YYYY-MM-DD HH:mm:ss') }}</div>
+                <div>作者：{{ articleInfo.authorName }}</div>
               </div>
               <div class="article-stat">
                 <div class="stat-item">
@@ -104,81 +104,42 @@ import { ref, computed, onMounted } from 'vue';
 import { marked, Renderer, type Tokens } from 'marked';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.min.css';
-import { getArticleById } from '@/api/article/article';
-import { TagTypesArray } from '@/api/article/types';
-
-// 文章信息类型
-interface ArticleInfo {
-  title: string;
-  createdTime: string;
-  updatedTime: string;
-  author: string;
-  content: string;
-  views: number;
-  likes: number;
-  comments: number;
-  tags: string[];
-}
-
-// 目录项类型
-interface TocItem {
-  text: string; // 标题文本
-  level: number; // 标题层级（1-6）
-  id: string; // 锚点ID
-}
+import { getArticle } from '@/api/article/article';
+import { TagTypesArray, type Article } from '@/api/article/types';
+import { formatTime } from '@/utils/time';
+import { ElMessage } from 'element-plus';
 
 const props = defineProps<{
   targetCommentId?: number;
   articleId: number;
 }>();
 
+// 定义事件
+const emit = defineEmits<{
+  'article-loaded': [article: Article];
+}>();
+
+interface TocItem {
+  text: string; // 标题文本
+  level: number; // 标题层级（1-6）
+  id: string; // 锚点ID
+}
+
 // 定义文章数据
-const articleInfo = ref<ArticleInfo>({
-  title: 'Vue3 + TS 实现Markdown文章展示',
-  createdTime: '2026-02-24',
-  updatedTime: '2026-02-25',
-  author: 'Vue开发者',
-  views: 1234,
-  likes: 567,
-  comments: 89,
-  tags: ['Vue3', 'TypeScript', 'Markdown', '前端开发'],
-  content: `
-# Markdown 一级标题
-这是用 Vue3 + TypeScript 渲染的Markdown文章示例。
-
-## **二级标题 - 代码高亮演示**
-### \`三级标题 - TypeScript示例\`
-\`\`\`typescript
-// Vue3 + TS 示例代码
-import { ref, computed } from 'vue';
-
-const count = ref<number>(0);
-const doubleCount = computed(() => count.value * 2);
-
-const increment = (): void => {
-  count.value++;
-};
-\`\`\`
-
-## 二级标题 - 列表示例
-### 三级标题 - 无序列表
-- Vue3 特性
-  - **组合式API**
-  - TypeScript支持
-  - \`更小的体积\`
-
-### 三级标题 - 有序列表
-1. 初始化项目
-2. 安装依赖
-3. 编写代码
-
-
-- [X] 任务项1
-- [ ] 任务项2
-- [ ] 任务项3
-- [ ] 任务项4
-
-  `.trim()
+const articleInfo = ref<Article>({
+  id: 0, // 文章ID
+  authorId: 0, // 作者ID
+  authorName: '', // 作者名称
+  title: '', // 标题
+  summary: '', // 摘要
+  content: '', // 内容
+  views: 0, // 浏览量
+  likes: 0, // 点赞数
+  comments: 0, // 评论数
+  tags: [], // 标签
+  cover: '', // 封面
+  createdTime: 0, // 创建时间
+  updatedTime: 0, // 更新时间
 });
 
 // 加载状态
@@ -263,14 +224,15 @@ const queryArticle = async (id: number) => {
   try {
     loading.value = true;
     error.value = '';
-    // todo 使用 getArticleById 或 getArticleDetail 获取文章详情
-    // const response = await getArticleById(id);
-    // articleInfo.value = response.data;
+    // 获取文章详情
+    const response = await getArticle(id);
+    articleInfo.value = response.data;
+    // 发送文章加载完成事件，传递文章信息
+    emit('article-loaded', response.data);
     // // 重新解析目录
     // parseToc();
-  } catch (err) {
-    console.error('查询文章失败:', err);
-    error.value = '获取文章详情失败，请刷新页面重试';
+  } catch (err: any) {
+    ElMessage.error(err.message || '获取文章详情失败');
   } finally {
     loading.value = false;
     // 确保渲染器就绪

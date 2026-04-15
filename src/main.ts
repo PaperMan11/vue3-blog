@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import './permission'
 
 // 引入模板的全局的样式
 import '@/styles/index.scss'

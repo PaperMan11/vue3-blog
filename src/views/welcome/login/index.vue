@@ -2,10 +2,10 @@
   <div class="login-container">
     <div class="login-box">
       <h2 class="login-title">用户登录</h2>
-      <el-form 
-        ref="loginFormRef" 
-        :model="loginForm" 
-        :rules="loginRules" 
+      <el-form
+        ref="loginFormRef"
+        :model="loginForm"
+        :rules="loginRules"
         label-width="0px"
         class="login-form"
       >
@@ -30,6 +30,24 @@
             clearable
           />
         </el-form-item>
+        <!-- 图形验证码 -->
+        <el-form-item prop="captcha">
+          <div class="captcha-wrapper">
+            <el-input
+              v-model="loginForm.captcha"
+              placeholder="请输入验证码"
+              prefix-icon="Key"
+              size="large"
+              autocomplete="off"
+              clearable
+              maxlength="4"
+            />
+            <div class="captcha-img-box" @click="refreshCaptcha">
+              <img v-if="captchaImage" :src="captchaImage" alt="验证码" class="captcha-img" title="点击刷新">
+              <div v-else class="captcha-loading">加载中...</div>
+            </div>
+          </div>
+        </el-form-item>
         <!-- 记住我+忘记密码-->
         <el-form-item prop="remember">
           <div class="login-option">
@@ -39,10 +57,10 @@
         </el-form-item>
         <el-form-item class="login-btn-group">
           <!-- 增加登录loading防重复点击 -->
-          <el-button 
-            type="primary" 
-            size="large" 
-            class="login-btn" 
+          <el-button
+            type="primary"
+            size="large"
+            class="login-btn"
             @click="handleLogin"
             :loading="loginLoading"
           >
@@ -58,10 +76,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import useUserStore from '@/stores/user'
+import { getCaptcha } from '@/api/welcome/welcome'
+
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -73,11 +93,15 @@ const loginFormRef = ref<any>()
 const loginLoading = ref<boolean>(false)
 // 登录成功后跳转路径，默认为首页
 const redirect = ref<string>('')
+// 验证码图片
+const captchaImage = ref<string>('')
 
 // 1. 表单数据双向绑定
 const loginForm = reactive({
   username: '', // 用户名/手机号
   password: '', // 密码
+  captcha: '', // 验证码
+  captchaId: '', // 验证码id
   remember: false // 是否记住密码
 })
 
@@ -93,6 +117,19 @@ const loginRules = reactive({
     { required: true, message: '请输入登录密码', trigger: 'blur' },
     { min: 6, max: 20, message: '密码长度在6-20个字符之间', trigger: 'blur' }
   ],
+  captcha: [
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    // {
+    //   validator: (rule: any, value: string, callback: any) => {
+    //     if (value.toLowerCase() !== captchaCode.value.toLowerCase()) {
+    //       callback(new Error('验证码错误'));
+    //     } else {
+    //       callback();
+    //     }
+    //   },
+    //   trigger: 'blur'
+    // }
+  ],
   remember: [] // 复选框无校验，只占位让表单校验通过
 })
 
@@ -104,32 +141,57 @@ const handleLogin = async () => {
 
   loginLoading.value = true // 开启加载状态
   try {
-    if (loginForm.username && loginForm.password) {
-      // 存储用户信息到pinia + localStorage
-      userStore.login({ username: loginForm.username })
-      
-      // 勾选则存账号密码，不勾选则清空
-      if (loginForm.remember) {
-        localStorage.setItem('loginInfo', JSON.stringify({
-          username: loginForm.username,
-          password: loginForm.password
-        }))
-      } else {
-        localStorage.removeItem('loginInfo')
-      }
+    // 调用登录API
+    await userStore.login({
+      username: loginForm.username,
+      password: loginForm.password,
+      captchaId: loginForm.captchaId,
+      captcha: loginForm.captcha
+    })
 
-      ElMessage.success('登录成功，正在为您跳转...')
-      setTimeout(() => {
-        router.push(redirect.value || '/') // 跳转到redirect或首页
-        loginLoading.value = false
-      }, 800)
+    // 勾选则存账号密码，不勾选则清空
+    if (loginForm.remember) {
+      localStorage.setItem('loginInfo', JSON.stringify({
+        username: loginForm.username,
+        password: loginForm.password
+      }))
     } else {
-      ElMessage.error('用户名或密码不能为空！')
-      loginLoading.value = false
+      localStorage.removeItem('loginInfo')
     }
-  } catch (err) {
-    ElMessage.error('登录失败，请稍后重试！')
+
+    ElMessage.success('登录成功，正在为您跳转...')
+    setTimeout(() => {
+      router.push(redirect.value || '/') // 跳转到redirect或首页
+      loginLoading.value = false
+      // 登录成功后清空验证码
+      loginForm.captcha = ''
+    }, 800)
+  } catch (err: any) {
+    ElMessage.error(err?.message || '登录失败，请稍后重试！')
     loginLoading.value = false
+    // 登录失败时刷新验证码
+    refreshCaptcha()
+    loginForm.captcha = ''
+  }
+}
+
+const refreshCaptcha = async () => {
+  try {
+    // 清空原有验证码输入
+    loginForm.captchaId = ''
+    loginForm.captcha = ''
+    captchaImage.value = ''
+
+    const response = await getCaptcha()
+    // 存储验证码ID和Base64图片
+    loginForm.captchaId = response.data.captcha_id
+    captchaImage.value = response.data.captcha_image
+  } catch (error: any) {
+    ElMessage({
+      message: error?.message || '获取验证码失败，请稍后重试',
+      type: 'error',
+      duration: 3000
+    })
   }
 }
 
@@ -153,6 +215,8 @@ onMounted(() => {
     loginForm.password = password
     loginForm.remember = true
   }
+  // 页面加载时获取验证码
+  refreshCaptcha()
 })
 </script>
 
@@ -189,6 +253,40 @@ onMounted(() => {
         font-size: 14px;
         cursor: pointer;
       }
+    }
+    // 验证码包装器样式
+    .captcha-wrapper {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      align-items: center;
+      .el-input {
+        flex: 1;
+      }
+    }
+    // 验证码图片样式
+    .captcha-img-box {
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 120px;
+      height: 40px;
+      border: 1px solid #dcdfe6;
+      border-radius: 4px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+      &:hover {
+        border-color: #409eff;
+      }
+    }
+    .captcha-img {
+      object-fit: contain;
+    }
+    .captcha-loading {
+      font-size: 12px;
+      color: #909399;
     }
     .login-btn-group {
       margin-top: 10px;

@@ -1,56 +1,137 @@
 import request from '@/utils/request';
+import type {
+  Article,
+  ArticleCategory,
+  CreateArticleReq,
+  CreateArticleResp,
+  UpdateArticleReq,
+  DeleteArticleReq,
+  ListArticleCategoryReq,
+  ListArticleCategoryResp,
+  ListArticleTagsReq,
+  ListArticleTagsResp,
+  ListArticleByTagsReq,
+  ListArticleByTagsResp,
+  ListArticleByCategoryReq,
+  ListArticleByCategoryResp,
+  CreateArticleCategoryReq,
+  CreateArticleCategoryResp,
+  UpdateArticleCategoryReq,
+  DeleteArticleCategoryReq
+} from './types';
 
-// 创建文章
-export function createArticle(data: any) {
-  return request({
-    url: '/article/create',
-    method: 'post',
-    data
-  });
-}
-
-// 修改文章
-export function updateArticle(data: any) {
-  return request({
-    url: '/article/update',
-    method: 'post',
-    data
-  });
-}
-
-// 根据ID获取文章
-export function getArticleById(id: number) {
-  return request({
-    url: `/article/${id}`,
+// 获取文章详情
+export function getArticle(id: number) {
+  return request<Article>({
+    url: `/blog/article/${id}`,
     method: 'get'
   });
 }
 
-// 获取文章列表
-export function getArticleList(params: any) {
-  return request({
-    url: '/article/list',
+// 创建文章
+export function createArticle(data: CreateArticleReq) {
+  return request<CreateArticleResp>({
+    url: '/blog/article',
+    method: 'post',
+    data
+  });
+}
+
+// 更新文章
+export function updateArticle(data: UpdateArticleReq) {
+  return request<Article>({
+    url: '/blog/article',
+    method: 'put',
+    data
+  });
+}
+
+// 删除文章
+export function deleteArticle(data: DeleteArticleReq) {
+  return request<void>({
+    url: '/blog/article',
+    method: 'delete',
+    data
+  });
+}
+
+export function listArticleCategories(data: ListArticleCategoryReq) {
+  return request<ListArticleCategoryResp>({
+    url: '/blog/article/category',
     method: 'get',
-    params
+    params: data
+  });
+}
+
+// 列出文章标签
+export function listArticleTags(data: ListArticleTagsReq) {
+  return request<ListArticleTagsResp>({
+    url: '/blog/article/tags',
+    method: 'get',
+    data
+  });
+}
+
+// 根据标签列出文章
+export function listArticleByTags(data: ListArticleByTagsReq) {
+  return request<ListArticleByTagsResp>({
+    url: '/blog/article/tags/article',
+    method: 'get',
+    data
+  });
+}
+
+export function getArticleByCategory(categoryId: number) {
+  return request<ArticleCategory>({
+    url: `/blog/article/category/${categoryId}/articles`,
+    method: 'get'
+  });
+}
+
+// 根据分类列出文章
+export function listArticleByCategory(data: ListArticleByCategoryReq) {
+  return request<ListArticleByCategoryResp>({
+    url: '/blog/article/category/articles',
+    method: 'get',
+    params: data
   });
 }
 
 // 获取用户文章时间线
 export function getArticleTimeline() {
-  return request({
-    url: '/article/timeline',
+  return request<Article[]>({
+    url: `/blog/user/article/timeline`,
     method: 'get'
   });
 }
 
-// 获取文章评论(分页)
-// params: articleId, pageNum, pageSize, sortType, targetCommentId(可选)
-// sortType: 1-按创建时间排序, 2-按点赞数排序
-// targetCommentId: 目标评论ID, 用于展开包含该评论的父评论(可选)
-export function getArticleComments(data: any) {
-  return request({
-    url: `/article/comment`,
+export function createArticleCategory(data: CreateArticleCategoryReq) {
+  return request<CreateArticleCategoryResp>({
+    url: '/blog/article/category',
     method: 'post',
     data
+  });
+}
+
+export function updateArticleCategory(data: UpdateArticleCategoryReq) {
+  return request<void>({
+    url: '/blog/article/category',
+    method: 'put',
+    data
+  });
+}
+
+export function deleteArticleCategory(data: DeleteArticleCategoryReq) {
+  return request<void>({
+    url: '/blog/article/category',
+    method: 'delete',
+    data
+  });
+}
+
+export function getAllArticleCategories() {
+  return request<ArticleCategory[]>({
+    url: '/blog/article/category/categories/all',
+    method: 'get'
   });
 }

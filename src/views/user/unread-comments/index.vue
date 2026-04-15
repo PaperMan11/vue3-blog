@@ -13,28 +13,25 @@
           <div class="comment-header">
             <div class="comment-user">
               <img
-                :src="comment.avatar || defaultAvatar"
+                :src="comment.userAvatar"
                 alt="用户头像"
                 class="user-avatar"
               />
-              <span class="user-name">{{ comment.username }}</span>
+              <span class="user-name">{{ comment.userName }}</span>
             </div>
-            <span class="comment-time">{{ formatTime(comment.createTime) }}</span>
+            <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
           </div>
           <div class="comment-content">
             {{ comment.content }}
           </div>
           <div class="comment-article">
-            <el-link :href="`/article/${comment.articleId}/detail`" target="_blank">
-              查看文章: {{ comment.articleTitle }}
+            <el-link :href="`/article/1/detail`" target="_blank">
+              查看文章: 示例文章
             </el-link>
           </div>
           <div class="comment-actions">
-            <el-button v-if="!comment.isRead" type="primary" size="small" @click="markAsRead(comment.id)">
+            <el-button type="primary" size="small" @click="markAsRead(comment.id)">
               标记为已读
-            </el-button>
-            <el-button v-else type="primary" size="small" disabled>
-              已读
             </el-button>
 
             <el-button type="success" size="small" @click="replyToComment(comment)">
@@ -69,63 +66,30 @@
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useUserStore } from '@/stores/user';
-import { getUnreadComments, markCommentAsRead } from '@/api/comment/comment';
-import type { Comment } from '@/api/comment/types';
+import { getArticleComments, createArticleComment, deleteArticleComment, getUnreadComments } from '@/api/article-comments/comment';
+import type { Reply } from '@/api/article-comments/types';
+import { formatTime } from '@/utils/time';
 
 const userStore = useUserStore();
 
 // 未读评论数据
-const unreadComments = ref<Comment[]>([
-  {
-    id: 1,
-    articleId: 1,
-    articleTitle: '示例文章1',
-    userId: 1,
-    username: '用户1',
-    avatar: 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png',
-    content: '这是一条评论',
-    parentId: null,
-    replyTo: null,
-    createTime: '2026-03-06 14:06:04',
-    isRead: true
-  },
-  {
-    id: 2,
-    articleId: 2,
-    articleTitle: '示例文章2',
-    userId: 2,
-    username: '用户2',
-    avatar: 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png',
-    content: '这是另一条评论',
-    parentId: null,
-    replyTo: null,
-    createTime: '2026-03-06 14:06:04',
-    isRead: false
-  },
-]);
+const unreadComments = ref<Reply[]>([]);
 const total = ref(0);
 const currentPage = ref(1);
 const pageSize = ref(10);
 
-// 默认头像
-const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png';
-
-// 格式化时间
-const formatTime = (time: string) => {
-  if (!time) return '';
-  return time.replace('T', ' ');
-};
-
 // 获取未读评论
-const getUnreadCommentsList = async () => {
+const fetchUnreadCommentsList = async () => {
   try {
-    const response = await getUnreadComments({
-      userId: userStore.userId,
+    // 获取未读评论列表
+    const res = await getUnreadComments({
       page: currentPage.value,
       pageSize: pageSize.value
-    }) as any;
-    unreadComments.value = response.comments;
-    total.value = response.total;
+    });
+
+    const { replies, total: resTotal } = res.data || {};
+    unreadComments.value = replies || [];
+    total.value = resTotal || 0;
   } catch (error) {
     console.error('获取未读评论失败:', error);
   }
@@ -134,7 +98,6 @@ const getUnreadCommentsList = async () => {
 // 标记为已读
 const markAsRead = async (commentId: number) => {
   try {
-    await markCommentAsRead(commentId);
     // 从列表中移除已读评论
     unreadComments.value = unreadComments.value.filter(comment => comment.id !== commentId);
     total.value--;
@@ -147,26 +110,26 @@ const markAsRead = async (commentId: number) => {
 };
 
 // 回复评论
-const replyToComment = (comment: Comment) => {
+const replyToComment = (reply: Reply) => {
   // 跳转到文章详情页并定位到具体评论
-  window.open(`/article/${comment.articleId}/detail#comment-${comment.id}`, '_blank');
+  window.open(`/article/1/detail#comment-${reply.id}`, '_blank');
 };
 
 // 分页处理
 const handleSizeChange = (size: number) => {
   pageSize.value = size;
   currentPage.value = 1;
-  getUnreadCommentsList();
+  fetchUnreadCommentsList();
 };
 
 const handleCurrentChange = (current: number) => {
   currentPage.value = current;
-  getUnreadCommentsList();
+  fetchUnreadCommentsList();
 };
 
 // 初始化
 onMounted(() => {
-  getUnreadCommentsList();
+  fetchUnreadCommentsList();
 });
 </script>
 

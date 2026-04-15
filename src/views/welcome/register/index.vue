@@ -2,10 +2,10 @@
   <div class="login-container">
     <div class="login-box">
       <h2 class="login-title">用户注册</h2>
-      <el-form 
-        ref="registerFormRef" 
-        :model="registerForm" 
-        :rules="registerRules" 
+      <el-form
+        ref="registerFormRef"
+        :model="registerForm"
+        :rules="registerRules"
         label-width="0px"
         class="login-form"
       >
@@ -41,6 +41,26 @@
             clearable
           />
         </el-form-item>
+        <el-form-item prop="nickname">
+          <el-input
+            v-model="registerForm.nickname"
+            placeholder="请输入昵称"
+            prefix-icon="UserFilled"
+            size="large"
+            autocomplete="off"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item prop="mobile">
+          <el-input
+            v-model="registerForm.mobile"
+            placeholder="请输入手机号（选填）"
+            prefix-icon="Phone"
+            size="large"
+            autocomplete="off"
+            clearable
+          />
+        </el-form-item>
         <!-- 注册协议勾选 -->
         <!-- <el-form-item prop="agree">
           <div class="login-option">
@@ -48,10 +68,10 @@
           </div>
         </el-form-item> -->
         <el-form-item class="login-btn-group">
-          <el-button 
-            type="primary" 
-            size="large" 
-            class="login-btn" 
+          <el-button
+            type="primary"
+            size="large"
+            class="login-btn"
             @click="handleRegister"
             :loading="registerLoading"
           >
@@ -70,7 +90,9 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { UserFilled, Phone } from '@element-plus/icons-vue'
 import useUserStore from '@/stores/user'
+import { register } from '@/api/welcome/welcome'
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -84,7 +106,9 @@ const registerLoading = ref<boolean>(false)
 const registerForm = reactive({
   username: '',    // 用户名/手机号
   password: '',    // 密码
-  repassword: ''  // 确认密码
+  repassword: '',  // 确认密码
+  nickname: '',    // 昵称
+  mobile: ''       // 手机号（选填）
 })
 
 // 表单校验规则 (和登录页一致的校验标准 + 密码一致性校验 + 必填协议)
@@ -110,6 +134,17 @@ const registerRules = reactive({
       },
       trigger: 'blur'
     }
+  ],
+  nickname: [
+    { required: true, message: '请输入昵称', trigger: 'blur' },
+    { min: 2, max: 20, message: '昵称长度在2-20个字符之间', trigger: 'blur' }
+  ],
+  mobile: [
+    {
+      pattern: /^1[3-9]\d{9}$/,
+      message: '请输入正确的手机号',
+      trigger: 'blur'
+    }
   ]
 })
 
@@ -121,19 +156,23 @@ const handleRegister = async () => {
 
   registerLoading.value = true
   try {
-    if (registerForm.username && registerForm.password) {
-      // 存储用户信息到pinia + localStorage
-      userStore.login({ username: registerForm.username })
-      // 注册成功提示并跳转登录页
-      ElMessage.success('注册成功，即将为您跳转到登录页...')
-      setTimeout(() => {
-        router.push('/welcome/login')
-        registerLoading.value = false
-      }, 1200)
-    } else {
-      ElMessage.error('请完善注册信息！')
-      registerLoading.value = false
+    const registerData = {
+      username: registerForm.username,
+      password: registerForm.password,
+      nickname: registerForm.nickname,
+      mobile: registerForm.mobile || undefined
     }
+    const resp = await register(registerData)
+    // 注册成功后，获取登录凭证
+    const { accessToken, refreshToken } = resp.data
+    // 存储用户信息到pinia + localStorage
+    userStore.setLoginToken(accessToken || '', refreshToken || '')
+    // 注册成功提示并跳转登录页
+    ElMessage.success('注册成功，即将为您跳转到登录页...')
+    setTimeout(() => {
+      router.push('/welcome/login')
+      registerLoading.value = false
+    }, 1200)
   } catch (err) {
     ElMessage.error('注册失败，请稍后重试！')
     registerLoading.value = false

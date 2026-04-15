@@ -8,11 +8,11 @@ import { ElMessage } from 'element-plus';
 
 NProgress.configure({ showSpinner: false }); // NProgress Configuration
 
-const whiteList = ['/login', '/auth-redirect']; // no redirect whitelist
-
-const userStore = useUserStore();
+const whiteList = ['/welcome/login', '/welcome/register', '/auth-redirect']; // no redirect whitelist
 
 router.beforeEach(async (to, from, next) => {
+  const userStore = useUserStore();
+
   // console.log('router.beforeEach', to.path, from.path);
   // start progress bar
   NProgress.start();
@@ -24,7 +24,7 @@ router.beforeEach(async (to, from, next) => {
   const hasToken = getToken();
 
   if (hasToken) {
-    if (to.path === '/login') {
+    if (to.path === '/welcome/login') {
       // if is logged in, redirect to the home page
       NProgress.done(); // hack: https://github.com/PanJiaChen/vue-element-admin/pull/2939
       next({ path: '/' });
@@ -38,7 +38,6 @@ router.beforeEach(async (to, from, next) => {
         try {
           await userStore.getInfo() as any;
           next({ ...to, replace: true });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           // remove token and go to login page to re-login
           await userStore.resetToken();
@@ -50,14 +49,15 @@ router.beforeEach(async (to, from, next) => {
     }
   } else {
     /* has no token*/
-    if (whiteList.indexOf(to.path) !== -1) {
-      // in the free login whitelist, go directly
-      next();
-    } else {
-      // other pages that do not have permission to access are redirected to the login page.
-      NProgress.done();
-      next(`/welcome/login?redirect=${to.path}`);
-    }
+    // if (whiteList.indexOf(to.path) !== -1) {
+    //   // in the free login whitelist, go directly
+    //   next();
+    // } else {
+    //   // other pages that do not have permission to access are redirected to the login page.
+    //   NProgress.done();
+    //   next(`/welcome/login?redirect=${to.path}`);
+    // }
+    next();
   }
 });
 

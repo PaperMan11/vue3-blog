@@ -1,18 +1,12 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { getToken, setToken, removeToken } from '@/utils/auth';
+import { login as ApiLogin, logoff as ApiLogoff } from '@/api/welcome/welcome';
+import { getUserInfo as ApiGetUserInfo, updateUserInfo as ApiUpdateUserInfo } from '@/api/user/user';
+import type { LoginReq } from '@/api/welcome/types';
+import type { UpdateUserInfoReq } from '@/api/user/types';
+import { ElMessage } from 'element-plus';
 
-export interface IUserState {
-  token: string;
-  userId: string,
-  username: string;
-  nickname: string;
-  email: string;
-  website: string;
-  avatar: string;
-  introduction: string;
-  roles: string[];
-}
 
 export const useUserStore = defineStore('user', () => {
   const token = ref<string>(getToken() || '');
@@ -20,7 +14,6 @@ export const useUserStore = defineStore('user', () => {
   const username = ref<string>('');
   const nickname = ref<string>('');
   const email = ref<string>('');
-  const website = ref<string>('');
   const avatar = ref<string>('');
   const introduction = ref<string>('');
   const roles = ref<string[]>([]);
@@ -32,31 +25,32 @@ export const useUserStore = defineStore('user', () => {
       username: username.value,
       nickname: nickname.value,
       email: email.value,
-      website: website.value,
       avatar: avatar.value,
       introduction: introduction.value,
       roles: roles.value
     };
   });
 
-  const login = (userInfo) => {
-    const { token: userToken, username: userUsername } = userInfo;
-    token.value = userToken || 'mock-token';
-    username.value = userUsername;
-    setToken(token.value);
+  const login = async (loginReq: LoginReq) => {
+    try {
+      const loginResp = await ApiLogin(loginReq);
+      const { userId, accessToken, refreshToken } = loginResp.data;
+      // userId.value = userId?.toString() || '';
+      setLoginToken(accessToken || '', refreshToken || '');
+    } catch (error) {
+      // ElMessage.error('登录失败');
+      throw error;
+    }
   }
 
-  const logout = () => {
-    token.value = '';
-    userId.value = '';
-    username.value = '';
-    nickname.value = '';
-    email.value = '';
-    website.value = '';
-    avatar.value = '';
-    introduction.value = '';
-    roles.value = [];
-    removeToken();
+  const logout = async () => {
+    try {
+      await ApiLogoff();
+      resetToken();
+    } catch (error) {
+      // ElMessage.error('登出失败');
+      throw error;
+    }
   }
 
   const resetToken = () => {
@@ -65,49 +59,56 @@ export const useUserStore = defineStore('user', () => {
     username.value = '';
     nickname.value = '';
     email.value = '';
-    website.value = '';
     avatar.value = '';
     introduction.value = '';
     roles.value = [];
     removeToken();
+    // 清除refreshToken
+    localStorage.removeItem('refreshToken');
   }
 
-  const getInfo = async ():Promise<Object> => {
-    // Placeholder for fetching user info from an API
-    // This function should set userId, name, avatar, introduction, and roles based on the response
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        userId.value = '12345';
-        username.value = 'user123';
-        nickname.value = '用户123';
-        email.value = 'user123@example.com';
-        website.value = 'https://example.com';
-        avatar.value = '';
-        introduction.value = 'I am a Vue.js developer.';
-        roles.value = ['admin'];
-        resolve({
-          userId: userId.value,
-          username: username.value,
-          nickname: nickname.value,
-          email: email.value,
-          website: website.value,
-          avatar: avatar.value,
-          introduction: introduction.value,
-          roles: roles.value
-        });
-      }, 1000);
-    });
+  const setLoginToken = (accessToken: string, refreshToken: string) => {
+    token.value = accessToken;
+    setToken(accessToken);
+    // 存储refreshToken到localStorage
+    localStorage.setItem('refreshToken', refreshToken);
+  }
+
+  const getInfo = async () => {
+    try {
+      const response = await ApiGetUserInfo();
+      const userInfo = response.data;
+
+      userId.value = userInfo.id?.toString() || '';
+      username.value = userInfo.username || '';
+      nickname.value = userInfo.nickname || '';
+      email.value = userInfo.email || '';
+      avatar.value = userInfo.avatar || 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif';
+      introduction.value = userInfo.introduction || '';
+
+      return userInfo;
+    } catch (error) {
+      throw error;
+    }
   }
 
   // 更新用户信息
-  const updateUserInfo = (userInfo) => {
-    const { username: userUsername, nickname, email, bio, website, avatar } = userInfo;
-    if (userUsername) username.value = userUsername;
-    if (nickname) nickname.value = nickname;
-    if (email) email.value = email;
-    if (bio) bio.value = bio;
-    if (website) website.value = website;
-    if (avatar) avatar.value = avatar;
+  const updateUserInfo = async (userInfo: UpdateUserInfoReq) => {
+    try {
+      const response = await ApiUpdateUserInfo(userInfo);
+      const updatedInfo = response.data;
+
+      if (updatedInfo.nickname) nickname.value = updatedInfo.nickname;
+      if (updatedInfo.avatar) avatar.value = updatedInfo.avatar;
+      if (updatedInfo.introduction) introduction.value = updatedInfo.introduction;
+      if (updatedInfo.email) email.value = updatedInfo.email;
+
+      ElMessage.success('更新用户信息成功');
+      return updatedInfo;
+    } catch (error) {
+      ElMessage.error('更新用户信息失败');
+      throw error;
+    }
   }
 
   return {
@@ -116,7 +117,6 @@ export const useUserStore = defineStore('user', () => {
     username,
     nickname,
     email,
-    website,
     avatar,
     introduction,
     roles,
@@ -125,6 +125,7 @@ export const useUserStore = defineStore('user', () => {
     login,
     logout,
     resetToken,
+    setLoginToken,
     getInfo,
     updateUserInfo
   };

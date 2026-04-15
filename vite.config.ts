@@ -68,7 +68,7 @@ export default defineConfig({
     port: 8001,
     proxy: {
       '/api': {
-        target: 'http://192.168.241.128:8888',
+        target: 'http://192.168.241.128:18888',
         changeOrigin: true,
         rewrite: (path) => path.replace('^' + process.env.VITE_APP_BASE_API, ''),
       }

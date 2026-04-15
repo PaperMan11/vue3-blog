@@ -88,14 +88,14 @@
         <div v-if="comments.length === 0" class="no-comments">
           暂无评论，快来抢沙发吧！
         </div>
-        <div v-else v-for="comment in paginatedComments" :key="comment.id" class="comment-item" :id="`comment-${comment.id}`">
+        <div v-else v-for="comment in comments" :key="comment.id" class="comment-item" :id="`comment-${comment.id}`">
           <div class="comment-avatar">
-            {{ comment.author.charAt(0) }}
+            {{ comment.userName.charAt(0) }}
           </div>
           <div class="comment-content">
             <div class="comment-header">
-              <span class="comment-author">{{ comment.author }}</span>
-              <span class="comment-time">{{ comment.time }}</span>
+              <span class="comment-author">{{ comment.userName }}</span>
+              <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
             </div>
             <div class="comment-text">{{ comment.content }}</div>
             <div class="comment-actions">
@@ -103,7 +103,7 @@
                 link
                 type="primary"
                 size="small"
-                @click="startReply(comment.id)"
+                @click="startReply(comment.id, comment.id, comment.userId, comment.userName)"
               >
                 回复
               </el-button>
@@ -114,12 +114,21 @@
                 size="small"
                 @click="toggleComment(comment.id)"
               >
-                {{ comment.isExpanded ? '收起' : `查看${comment.replyCount}条回复` }}
+                {{ expandedCommentIds.has(comment.id) ? '收起' : `查看${comment.replyCount}条回复` }}
+              </el-button>
+              <el-button
+                v-if="userStore.userId && (parseInt(userStore.userId) === comment.userId || parseInt(userStore.userId) === authorId)"
+                link
+                type="danger"
+                size="small"
+                @click="deleteComment(comment.id)"
+              >
+                删除
               </el-button>
             </div>
 
             <!-- 父评论的回复输入框 -->
-            <div v-if="replyState.isReplying && replyState.commentId === comment.id && replyState.replyToCommentId === comment.id" class="reply-input-section">
+            <div v-if="replyState.isReplying && replyState.replyToCommentId === comment.id" class="reply-input-section">
               <div class="reply-to-info" v-if="replyState.replyToName">
                 回复: {{ replyState.replyToName }}
               </div>
@@ -173,86 +182,97 @@
             </div>
 
             <!-- 回复列表 -->
-            <div v-if="comment.isExpanded && comment.replies && comment.replies.length > 0" class="reply-list">
-              <div v-for="reply in comment.replies.slice(0, replyPageSizes[comment.id] || childPageSize)" :key="reply.id" class="reply-item" :id="`comment-${reply.id}`">
-                <div class="reply-avatar">
-                  {{ reply.author.charAt(0) }}
-                </div>
-                <div class="reply-content">
-                  <div class="reply-header">
-                    <span class="reply-author">{{ reply.author }}</span>
-                    <span class="reply-to">回复 {{ reply.replyTo }}</span>
-                    <span class="reply-time">{{ reply.time }}</span>
-                  </div>
-                  <div class="reply-text">{{ reply.content }}</div>
-                  <div class="reply-actions">
-                    <el-button
-                      link
-                      type="primary"
-                      size="small"
-                      @click="startReply(comment.id, reply.id, reply.author)"
-                    >
-                      回复
-                    </el-button>
-                  </div>
-
-                  <!-- 子评论的回复输入框 -->
-                  <div v-if="replyState.isReplying && replyState.commentId === comment.id && replyState.replyToCommentId === reply.id" class="reply-input-section">
-                    <div class="reply-to-info" v-if="replyState.replyToName">
-                      回复: {{ replyState.replyToName }}
+            <div v-if="expandedCommentIds.has(comment.id)" class="reply-list">
+              <!-- 回复加载状态 -->
+              <div v-if="replyLoading[comment.id]" class="loading-container">
+                <el-skeleton :rows="3" animated />
+              </div>
+              <div v-else-if="replyComments[comment.id] && (replyComments[comment.id] || []).length > 0">
+                <transition-group name="reply-fade" tag="div">
+                  <div v-for="reply in replyComments[comment.id]" :key="reply.id" class="reply-item" :id="`comment-${reply.id}`">
+                    <div class="reply-avatar">
+                      {{ reply.userName.charAt(0) }}
                     </div>
-                    <textarea
-                      v-model="replyState.content"
-                      placeholder="写下你的回复..."
-                      class="reply-textarea"
-                      ref="replyTextarea"
-                    ></textarea>
-                    <div class="reply-actions">
-                      <el-button
-                        link
-                        type="primary"
-                        size="small"
-                        @click="replyState.showEmojiPicker = !replyState.showEmojiPicker"
-                        class="tool-button"
-                      >
-                        😊
-                      </el-button>
-                      <el-button
-                        link
-                        type="primary"
-                        size="small"
-                        @click="cancelReply"
-                      >
-                        取消
-                      </el-button>
-                      <el-button
-                        type="primary"
-                        size="small"
-                        @click="submitReply"
-                        :disabled="!replyState.content.trim()"
-                      >
-                        回复
-                      </el-button>
-                    </div>
-
-                    <!-- 回复表情选择器 -->
-                    <div v-if="replyState.showEmojiPicker" class="emoji-picker">
-                      <div class="emoji-grid">
-                        <span
-                          v-for="emoji in emojis"
-                          :key="emoji"
-                          class="emoji-item"
-                          @click="addReplyEmoji(emoji)"
+                    <div class="reply-content">
+                      <div class="reply-header">
+                        <span class="reply-author">{{ reply.userName }}</span>
+                        <span class="reply-to">回复 {{ reply.replyUserName }}</span>
+                        <span class="reply-time">{{ formatTime(reply.createdAt) }}</span>
+                      </div>
+                      <div class="reply-text">{{ reply.content }}</div>
+                      <div class="reply-actions">
+                        <el-button
+                          link
+                          type="primary"
+                          size="small"
+                          @click="startReply(comment.id, reply.id, reply.userId, reply.userName)"
                         >
-                          {{ emoji }}
-                        </span>
+                          回复
+                        </el-button>
+                      </div>
+
+                      <!-- 子评论的回复输入框 -->
+                      <div v-if="replyState.isReplying && replyState.commentId === comment.id && replyState.replyToCommentId === reply.id" class="reply-input-section">
+                        <div class="reply-to-info" v-if="replyState.replyToName">
+                          回复: {{ replyState.replyToName }}
+                        </div>
+                        <textarea
+                          v-model="replyState.content"
+                          placeholder="写下你的回复..."
+                          class="reply-textarea"
+                          ref="replyTextarea"
+                        ></textarea>
+                        <div class="reply-actions">
+                          <el-button
+                            link
+                            type="primary"
+                            size="small"
+                            @click="replyState.showEmojiPicker = !replyState.showEmojiPicker"
+                            class="tool-button"
+                          >
+                            😊
+                          </el-button>
+                          <el-button
+                            link
+                            type="primary"
+                            size="small"
+                            @click="cancelReply"
+                          >
+                            取消
+                          </el-button>
+                          <el-button
+                            type="primary"
+                            size="small"
+                            @click="submitReply"
+                            :disabled="!replyState.content.trim()"
+                          >
+                            回复
+                          </el-button>
+                        </div>
+
+                        <!-- 回复表情选择器 -->
+                        <div v-if="replyState.showEmojiPicker" class="emoji-picker">
+                          <div class="emoji-grid">
+                            <span
+                              v-for="emoji in emojis"
+                              :key="emoji"
+                              class="emoji-item"
+                              @click="addReplyEmoji(emoji)"
+                            >
+                              {{ emoji }}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </transition-group>
+              </div>
+              <div v-else class="no-replies">
+                暂无回复
               </div>
               <!-- 回复分页 -->
-              <div v-if="comment.replies.length > (replyPageSizes[comment.id] || childPageSize)" class="reply-pagination">
+              <div v-if="(replyComments[comment.id] || []).length < comment.replyCount" class="reply-pagination">
                 <el-button
                   link
                   type="primary"
@@ -266,11 +286,11 @@
           </div>
         </div>
         <!-- 父评论分页 -->
-        <div v-if="totalPages > 1" class="comment-pagination">
+        <div v-if="computedTotalPages > 1" class="comment-pagination">
           <el-pagination
             v-model:current-page="currentPage"
             :page-size="parentPageSize"
-            :total="comments.length"
+            :total="totalCount"
             @current-change="handlePageChange"
             layout="prev, pager, next"
             :pager-count="5"
@@ -284,81 +304,33 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
-import { getArticleComments } from '@/api/article/article';
-import { useRoute } from 'vue-router';
+import { getArticleComments, createArticleComment, deleteArticleComment, getReplyComments } from '@/api/article-comments/comment';
+import type { Comment, Reply } from '@/api/article-comments/types';
+import useUserStore from '@/stores/user';
 
 // 文本框引用
 const commentTextarea = ref<HTMLTextAreaElement | null>(null);
 const replyTextarea = ref<HTMLTextAreaElement | null>(null);
 
-// 评论类型
-interface Comment {
-  id: number;
-  author: string;
-  content: string;
-  time: string;
-  images: string[];
-  replies?: Reply[];
-  replyCount?: number;
-  isExpanded?: boolean; // 是否展开回复
-}
-
-// 回复类型
-interface Reply {
-  id: number;
-  author: string;
-  content: string;
-  time: string;
-  replyTo: string;
-}
+// 用户store
+const userStore = useUserStore();
 
 const props = defineProps<{
   targetCommentId?: number;
   articleId: number;
+  authorId: number;
 }>();
 
 // 评论数据
-const comments = ref<Comment[]>([
-  {
-    id: 1,
-    author: '用户1',
-    content: '这篇文章写得真好！😊',
-    time: '2026-03-01 10:00',
-    images: [],
-    replies: [
-      {
-        id: 101,
-        author: '用户3',
-        content: '是的，我也这么认为',
-        time: '2026-03-01 11:00',
-        replyTo: '用户1'
-      },
-      {
-        id: 102,
-        author: '用户4',
-        content: '学到了很多',
-        time: '2026-03-01 12:00',
-        replyTo: '用户1'
-      }
-    ],
-    replyCount: 2,
-    isExpanded: false
-  },
-  {
-    id: 2,
-    author: '用户2',
-    content: '学习了很多新知识',
-    time: '2026-03-02 14:30',
-    images: [],
-    replies: [],
-    replyCount: 0,
-    isExpanded: false
-  }
-]);
+const comments = ref<Comment[]>([]);
 // 加载状态
 const loading = ref(false);
 // 错误信息
 const error = ref('');
+
+// 总数和总页数
+const totalCount = ref(0);
+const totalPages = ref(0);
 
 // 新评论
 const newComment = ref({
@@ -368,13 +340,17 @@ const newComment = ref({
 // 回复相关
 const replyState = ref({
   isReplying: false,
-  commentId: null as number | null, // 父评论ID
-  replyToId: null as number | null, // 子评论ID，用于回复子评论
-  replyToCommentId: null as number | null, // 要回复的具体评论ID（父评论或子评论）
+  commentId: 0, // 父评论ID(0表示顶级评论)
+  replyToId: 0, // 回复对象id
   replyToName: '', // 回复的用户名
+  replyToCommentId: 0, // 要回复的具体评论ID（父评论或子评论）
   content: '',
   showEmojiPicker: false
 });
+
+// 回复数据
+const replyComments = ref<Record<number, Reply[]>>({}); // 存储每个评论的回复列表
+const replyLoading = ref<Record<number, boolean>>({}); // 存储每个评论的回复加载状态
 
 // 表情选择器
 const showEmojiPicker = ref(false);
@@ -387,56 +363,59 @@ const emojis = [
 const filterType = ref<'latest' | 'hot'>('latest'); // 筛选类型：latest-最新，hot-热门
 
 // 分页相关
-const parentPageSize = 20;
-const childPageSize = 10;
+const parentPageSize = ref(10);
+const childPageSize = ref(10);
 const currentPage = ref(1);
-const replyPageSizes = ref<Record<number, number>>({}); // 存储每个评论的回复分页大小
+const expandedCommentIds = ref<Set<number>>(new Set()); // 存储展开的评论ID
 
-// 计算属性：分页后的父评论
-const paginatedComments = computed(() => {
-  // 根据筛选类型对评论进行排序
-  const sortedComments = [...comments.value].sort((a, b) => {
-    if (filterType.value === 'latest') {
-      // 按时间倒序排列（最新的在前）
-      return new Date(b.time).getTime() - new Date(a.time).getTime();
-    } else {
-      // 按回复数量倒序排列（热门的在前）
-      return (b.replyCount || 0) - (a.replyCount || 0);
-    }
-  });
-
-  // 分页
-  const start = (currentPage.value - 1) * parentPageSize;
-  const end = start + parentPageSize;
-  return sortedComments.slice(start, end);
-});
-
-// 总页数
-const totalPages = computed(() => {
-  return Math.ceil(comments.value.length / parentPageSize);
+// 总页数（使用API返回的值）
+const computedTotalPages = computed(() => {
+  return totalPages.value || Math.ceil(comments.value.length / parentPageSize.value);
 });
 
 // 展开/折叠评论
-const toggleComment = (commentId: number) => {
+const toggleComment = async (commentId: number) => {
   const comment = comments.value.find(c => c.id === commentId);
   if (comment) {
-    if (comment.isExpanded) {
+    if (expandedCommentIds.value.has(commentId)) {
       // 折叠子评论
-      replyPageSizes.value[commentId] = childPageSize;
+      expandedCommentIds.value.delete(commentId);
+      replyComments.value[commentId] = [];
+    } else {
+      // 展开子评论，如果没有数据则调用接口获取回复
+      if (!replyComments.value[commentId] || replyComments.value[commentId].length === 0) {
+        replyLoading.value[commentId] = true;
+        try {
+          const response = await getReplyComments({
+            page: 1,
+            pageSize: childPageSize.value,
+            articleId: props.articleId,
+            commentId: commentId
+          });
+          if (response.data && response.data.replies) {
+            replyComments.value[commentId] = response.data.replies;
+          }
+        } catch (error: any) {
+          console.error('获取回复失败:', error);
+          ElMessage.error('获取回复失败，请稍后重试');
+        } finally {
+          replyLoading.value[commentId] = false;
+        }
+      }
+      expandedCommentIds.value.add(commentId);
     }
-    comment.isExpanded = !comment.isExpanded;
     replyState.value.isReplying = false; // 点击展开/折叠时，取消回复状态
   }
 };
 
 // 开始回复
-const startReply = (commentId: number, replyToId: number | null = null, replyToName: string = '') => {
+const startReply = (commentId: number, replyToCommentId: number, replyToId: number, replyToName: string) => {
   replyState.value = {
     isReplying: true,
-    commentId,
-    replyToId,
-    replyToCommentId: replyToId || commentId, // 如果是回复子评论，则设置为子评论ID，否则设置为父评论ID
-    replyToName: replyToName || comments.value.find(c => c.id === commentId)?.author || '',
+    commentId: commentId,
+    replyToId: replyToId,
+    replyToCommentId: replyToCommentId,
+    replyToName: replyToName,
     content: '',
     showEmojiPicker: false
   };
@@ -446,9 +425,9 @@ const startReply = (commentId: number, replyToId: number | null = null, replyToN
 const cancelReply = () => {
   replyState.value = {
     isReplying: false,
-    commentId: null,
-    replyToId: null,
-    replyToCommentId: null,
+    commentId: 0,
+    replyToId: 0,
+    replyToCommentId: 0,
     replyToName: '',
     content: '',
     showEmojiPicker: false
@@ -456,80 +435,184 @@ const cancelReply = () => {
 };
 
 // 提交评论
-const submitComment = () => {
+const submitComment = async () => {
   if (!newComment.value.content.trim()) {
     ElMessage.warning('请输入评论内容');
     return;
   }
 
-  const comment: Comment = {
-    id: Date.now(),
-    author: '当前用户', // 实际项目中应该从用户状态中获取
-    content: newComment.value.content,
-    time: new Date().toLocaleString(),
-    images: [],
-    replies: [],
-    replyCount: 0,
-    isExpanded: false
-  };
+  if (!userStore.userId) {
+    ElMessage.warning('请先登录');
+    return;
+  }
 
-  // 直接添加到本地评论数据中
-  comments.value.unshift(comment);
+  try {
+    await createArticleComment({
+      articleId: props.articleId,
+      userId: parseInt(userStore.userId),
+      replyTo: props.authorId,
+      content: newComment.value.content,
+      imgs: []
+    });
 
-  // 重置评论输入
-  newComment.value = {
-    content: ''
-  };
+    // 创建成功后刷新评论列表
+    await fetchComments();
 
-  ElMessage.success('评论发布成功');
+    // 重置评论输入
+    newComment.value = {
+      content: ''
+    };
+
+    ElMessage.success('评论发布成功');
+  } catch (error: any) {
+    console.error('发布评论失败:', error);
+    ElMessage.error(error?.message || '发布评论失败，请稍后重试');
+  }
 };
 
 // 提交回复
-const submitReply = () => {
+const submitReply = async () => {
   if (!replyState.value.content.trim()) {
     ElMessage.warning('请输入回复内容');
     return;
   }
 
-  const comment = comments.value.find(c => c.id === replyState.value.commentId);
-  if (comment) {
-    const reply: Reply = {
-      id: Date.now(),
-      author: '当前用户', // 实际项目中应该从用户状态中获取
-      content: replyState.value.content,
-      time: new Date().toLocaleString(),
-      replyTo: replyState.value.replyToName
-    };
+  if (!userStore.userId) {
+    ElMessage.warning('请先登录');
+    return;
+  }
 
-    if (!comment.replies) {
-      comment.replies = [];
+  try {
+    await createArticleComment({
+      articleId: props.articleId,
+      parentCommentId: replyState.value.commentId,
+      replyCommentId: replyState.value.replyToCommentId,
+      userId: parseInt(userStore.userId),
+      replyTo: replyState.value.replyToId,
+      content: replyState.value.content,
+      imgs: []
+    });
+
+    // 创建成功后重新获取该评论的回复列表
+    const commentId = replyState.value.commentId;
+    if (commentId) {
+      replyLoading.value[commentId] = true;
+      try {
+        const response = await getReplyComments({
+          page: 1,
+          pageSize: childPageSize.value,
+          articleId: props.articleId,
+          commentId: commentId
+        });
+
+        const { replies, total } = response.data || {};
+        replyComments.value[commentId] = replies;
+        // 更新评论的回复数量
+        const comment = comments.value.find(c => c.id === commentId);
+        if (comment) {
+          comment.replyCount = total || 0;
+        }
+      } catch (error: any) {
+        console.error('获取回复列表失败:', error);
+      } finally {
+        replyLoading.value[commentId] = false;
+      }
     }
-    comment.replies.push(reply);
-    comment.replyCount = (comment.replyCount || 0) + 1;
-    comment.isExpanded = true;
 
     ElMessage.success('回复发布成功');
     cancelReply();
+  } catch (error: any) {
+    console.error('发布回复失败:', error);
+    ElMessage.error(error?.message || '发布回复失败，请稍后重试');
   }
 };
 
 // 加载更多回复
-const loadMoreReplies = (commentId: number) => {
-  if (!replyPageSizes.value[commentId]) {
-    replyPageSizes.value[commentId] = childPageSize;
+const loadMoreReplies = async (commentId: number) => {
+  // 获取当前已加载的回复数量
+  const currentCount = replyComments.value[commentId]?.length || 0;
+
+  // 计算下一页
+  const currentPage = Math.floor(currentCount / childPageSize.value) + 1;
+
+  replyLoading.value[commentId] = true;
+  try {
+    const response = await getReplyComments({
+      page: currentPage,
+      pageSize: childPageSize.value,
+      articleId: props.articleId,
+      commentId: commentId
+    });
+    if (response.data && response.data.replies) {
+      const { replies } = response.data;
+      // 只有当返回的数据不为空时才合并
+      if (replies.length > 0) {
+        // 合并新的回复数据
+        if (!replyComments.value[commentId]) {
+          replyComments.value[commentId] = [];
+        }
+        replyComments.value[commentId] = [...replyComments.value[commentId], ...replies];
+      }
+    }
+  } catch (error: any) {
+    console.error('加载更多回复失败:', error);
+    ElMessage.error('加载更多回复失败，请稍后重试');
+  } finally {
+    replyLoading.value[commentId] = false;
   }
-  replyPageSizes.value[commentId] += childPageSize;
+};
+
+// 删除评论
+const deleteComment = async (commentId: number) => {
+  try {
+    await deleteArticleComment({
+      articleId: props.articleId,
+      commentId
+    });
+    // 删除成功后刷新评论列表
+    await fetchComments();
+    ElMessage.success('评论删除成功');
+  } catch (error: any) {
+    console.error('删除评论失败:', error);
+    ElMessage.error(error?.message || '删除评论失败，请稍后重试');
+  }
 };
 
 // 处理分页变化
-const handlePageChange = (page: number) => {
+const handlePageChange = async (page: number) => {
   currentPage.value = page;
+  await fetchComments();
 };
 
 // 设置筛选类型
-const setFilterType = (type: 'latest' | 'hot') => {
+const setFilterType = async (type: 'latest' | 'hot') => {
   filterType.value = type;
   currentPage.value = 1; // 切换筛选类型时重置到第一页
+  await fetchComments();
+};
+
+// 时间格式化函数
+const formatTime = (timestamp: number) => {
+  // 将秒级时间戳转换为毫秒级时间戳
+  const date = new Date(timestamp * 1000);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+
+  // 如果是今天，显示具体时间
+  if (date.toDateString() === now.toDateString()) {
+    return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // 如果是昨天
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) {
+    return '昨天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // 否则显示完整日期
+  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }) +
+         ' ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
 };
 
 // 添加表情到光标位置
@@ -602,10 +685,11 @@ const scrollToComment = async (commentId: number) => {
   try {
     // 展开包含该评论的父评论
     const parentComment = comments.value.find(c =>
-      c.id === commentId || c.replies?.some(r => r.id === commentId)
+      // c.id === commentId || c.replies?.some(r => r.id === commentId)
+      c.replies?.some(r => r.id === commentId)
     );
     if (parentComment) {
-      parentComment.isExpanded = true;
+      expandedCommentIds.value.add(parentComment.id);
       // 等待父评论展开后子评论渲染完成
       await nextTick();
       // 额外等待一点时间确保子评论完全渲染
@@ -650,18 +734,31 @@ const fetchComments = async () => {
   try {
     loading.value = true;
     error.value = '';
-    // todo: 分页获取评论数据
-    // const response = await getArticleComments({
-    //   articleId: props.articleId,
-    //   targetCommentId: props.targetCommentId,
-    //   sort: filterType.value // 传递筛选类型到API
-    // }) as any;
-    // // 假设 API 返回的数据结构与我们的 Comment 接口匹配
-    // comments.value = response.comments || [];
-    // currentPage.value = response.currentPage || 1;
-  } catch (err) {
-    console.error('获取评论失败:', err);
-    error.value = '获取评论失败，请刷新页面重试';
+
+    const response = await getArticleComments({
+      page: currentPage.value,
+      pageSize: parentPageSize.value,
+      articleId: props.articleId,
+      targetCommentId: props.targetCommentId,
+      tab: filterType.value
+    });
+
+    // 更新评论数据
+    const { comments: commentList, total, totalPage } = response.data || {};
+    comments.value = commentList;
+    totalCount.value = total;
+    totalPages.value = totalPage;
+
+    // 填充初始回复数据
+    if (commentList) {
+      commentList.forEach(comment => {
+        if (comment.replies && comment.replies.length > 0) {
+          replyComments.value[comment.id] = comment.replies;
+        }
+      });
+    }
+  } catch (err: any) {
+    ElMessage.error(err?.message || '获取评论失败，请刷新页面重试');
   } finally {
     loading.value = false;
   }
@@ -904,6 +1001,21 @@ watch(() => props.articleId, async (newValue) => {
   margin-top: 15px;
   padding-left: 20px;
   border-left: 2px solid #f0f0f0;
+  contain: layout;
+  will-change: height;
+  transition: height 0.3s ease;
+}
+
+/* 回复列表过渡动画 */
+.reply-fade-enter-active,
+.reply-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.reply-fade-enter-from,
+.reply-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 .reply-item {

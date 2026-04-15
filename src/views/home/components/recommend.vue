@@ -7,17 +7,24 @@
     <div class="split-line"></div>
     <div class="recommend-content">
       <!-- 循环推荐列表 + 序号 -->
-      <div class="recommend-item" v-for="(value, index) in recommends" :key="value.id" @click="handleClick(value)">
-        <!-- 封面图 + 无封面兜底图标 -->
-        <div class="cover-box">
-          <img v-if="value.cover.length > 0" :src="value.cover" alt="封面图" class="cover-img">
-          <svg-icon v-else icon-class="image" class="default-icon" />
+      <div v-if="recommends.length > 0">
+        <div class="recommend-item" v-for="(value, index) in recommends" :key="value.id" @click="handleClick(value)">
+          <!-- 封面图 + 无封面兜底图标 -->
+          <div class="cover-box">
+            <img v-if="value.cover.length > 0" :src="value.cover" alt="封面图" class="cover-img">
+            <svg-icon v-else icon-class="image" class="default-icon" />
+          </div>
+          <!-- 标题+时间 文本区域 -->
+          <div class="info-box">
+            <div class="article-title">{{ value.title }}</div>
+            <div class="article-time">{{ formatTime(value.createdTime, 'YYYY-MM-DD') }}</div>
+          </div>
         </div>
-        <!-- 标题+时间 文本区域 -->
-        <div class="info-box">
-          <div class="article-title">{{ value.title }}</div>
-          <div class="article-time">{{ formatTime(value.createdAt, 'YYYY-MM-DD') }}</div>
-        </div>
+      </div>
+      <!-- 空状态提示 -->
+      <div v-else class="empty-state">
+        <svg-icon icon-class="document" class="empty-icon" />
+        <div class="empty-text">暂无推荐文章</div>
       </div>
     </div>
   </el-card>
@@ -25,28 +32,28 @@
 
 <script setup lang="ts">
 import { formatTime } from '@/utils/time';
+import { listRecommendArticle } from '@/api/home/home'
+import type { Article } from '@/api/article/types'
 
-interface RecommendItem {
-  id: number;
-  title: string;
-  cover: string;
-  createdAt: number;
-  updatedAt: number;
+const recommends = ref<Article[]>([])
+
+onMounted(() => {
+  getRecommendArticles()
+})
+
+const getRecommendArticles = async () => {
+  const res = await listRecommendArticle({
+    page: 1,
+    pageSize: 5,
+  })
+  recommends.value = res.data || []
 }
-
-const recommends = [
-  { id: 1, title: 'Vue 3 新特性介绍', cover: '', createdAt: 1768792281, updatedAt: 1768792281 },
-  { id: 2, title: '如何使用 TypeScript 提升代码质量', cover: '', createdAt: 1768782281, updatedAt: 1768782281 },
-  { id: 3, title: '前端性能优化最佳实践', cover: '', createdAt: 1768772281, updatedAt: 1768772281 },
-  { id: 4, title: '响应式编程入门指南', cover: '', createdAt: 1768762281, updatedAt: 1768762281 },
-  { id: 5, title: '构建高可用的前端应用', cover: '', createdAt: 1768752281, updatedAt: 1768752281 },
-]
 
 // 路由实例
 const router = useRouter();
 
 // 处理点击事件
-const handleClick = (article: RecommendItem) => {
+const handleClick = (article: Article) => {
   router.push(`/article/${article.id}/detail`);
 };
 </script>
@@ -165,5 +172,24 @@ const handleClick = (article: RecommendItem) => {
   // 最后一个推荐项 移除底部外边距，避免列表底部多余留白，优化视觉细节
   .recommend-item:last-child {
     margin-bottom: 0;
+  }
+
+  // 空状态样式
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #909399;
+
+    .empty-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .empty-text {
+      font-size: 14px;
+    }
   }
   </style>

@@ -3,7 +3,7 @@
     <div class="user-info">
       <el-avatar size="large" :src="userStore.avatar" />
       <div class="user-info-text">
-        <span>{{ "啊哈啊哈" }}</span>
+        <span>{{ userName }}</span>
         <div class="split-line"></div>
         <div class="soup">{{ obj.output }}</div>
         <!-- <EllipsisText :text="userStore.introduction || '这个人什么都没留下这个人什么都没留下这个人什么都没留下这个人什么都没留下这个人什么都没留下...'"/> -->
@@ -11,15 +11,15 @@
     </div>
     <div class="article-stats">
       <div class="article">
-        <span>{{ 123455 }}</span>
+        <span>{{ articleStats.articleNum || 0 }}</span>
         <span>文章数</span>
       </div>
       <div class="article-category">
-        <span>{{ 5 }}</span>
+        <span>{{ articleStats.categoryNum || 0 }}</span>
         <span>分类数</span>
       </div>
       <div class="article-comment">
-        <span>{{ 999 }}</span>
+        <span>{{ articleStats.commentNum || 0 }}</span>
         <span>评论数</span>
       </div>
     </div>
@@ -30,7 +30,33 @@
 import { getHitokotoTypewriter } from '@/api/third-party/hitokoto';
 import useUserStore from '@/stores/user';
 const userStore = useUserStore();
+const userName = ref(userStore.username)
+// 用户数据统计
+import { getArticleStats } from '@/api/home/home';
+import type { ArticleStats } from '@/api/home/types';
+import { onMounted } from 'vue';
 
+const articleStats = ref<ArticleStats>({
+  articleNum: 0,
+  categoryNum: 0,
+  commentNum: 0,
+})
+
+// 获取文章统计
+onMounted(() => {
+  getArticleStats().then(res => {
+    const { articleNum, categoryNum, commentNum } = res.data
+    articleStats.value = { articleNum, categoryNum, commentNum }
+  }).catch(err => {
+    ElMessage({
+      message: err.message || 'Error',
+      type: 'error',
+      duration: 5 * 1000
+    });
+  })
+})
+
+// 每日一言
 const obj = reactive({
   output: "",
   isEnd: false,
@@ -41,7 +67,6 @@ const obj = reactive({
   backSpeed: 100,
   sentencePause: false,
 })
-
 getHitokotoTypewriter(obj)
 </script>
 

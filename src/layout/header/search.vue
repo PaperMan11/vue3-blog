@@ -14,8 +14,8 @@
       />
     </div>
     <!-- 下拉联想/历史/推荐框 - 有内容+显示状态才展示 -->
-    <div 
-      v-show="showSearchBox && (searchHistoryList.length > 0 || searchRecommendList.length > 0 || searchResultList.length > 0)"
+    <div
+      v-show="showSearchBox && (searchHistoryList.length > 0 || hotRecommendList.length > 0 || searchResultList.length > 0)"
       class="search-option-box"
     >
       <!-- 搜索联想结果 - 输入关键词时展示 -->
@@ -54,42 +54,53 @@
 <script setup lang="ts">
 import { ref, watchEffect, onMounted, onUnmounted } from 'vue'
 import { Search, Clock, Delete } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { searchSuggest, getHotSearch } from '@/api/search/search'
 
+const router = useRouter()
 const searchValue = ref('')
 // 控制下拉框显隐
 const showSearchBox = ref(false)
 // 搜索联想结果列表
 const searchResultList = ref<string[]>([])
 // 本地缓存的搜索历史列表
-const searchHistoryList = ref<string[]>(['Vue3', 'TypeScript'])
-const searchRecommendList = ref<string[]>(['前端博客', 'Sass用法', 'Pinia'])
+const searchHistoryList = ref<string[]>([])
+const searchRecommendList = ref<string[]>([])
 // 防抖定时器
 let timer: NodeJS.Timeout | null = null
 
 // 标签/分类/高频关键词
-const hotRecommendList = [
-  'Vue3', 'TypeScript', '前端博客', 'Sass用法', 'Pinia', 'Vite', 'ElementPlus', '前端进阶'
-]
-// 搜索联想匹配库（可替换成你的文章标题/标签/分类接口数据）
-const searchMatchPool = [
-  'Vue3组合式API', 'Vue3+TS实战', 'TypeScript语法', 'Sass混合器', 'Pinia状态管理',
-  'Vite项目搭建', 'ElementPlus组件', '前端工程化', '博客搭建教程', 'CSS布局技巧'
-]
+const hotRecommendList = ref<string[]>([])
+// 加载状态
+const loading = ref(false)
 
 // ========== 获取本地缓存的搜索历史 ==========
-onMounted(() => {
+onMounted(async () => {
   const history = localStorage.getItem('blog_search_history')
   if (history) {
     searchHistoryList.value = JSON.parse(history)
   }
   // 点击页面空白处 关闭下拉框
   document.addEventListener('click', handleDocumentClick)
+
+  // 获取热门搜索
+  await fetchHotSearch()
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleDocumentClick)
   timer && clearTimeout(timer)
 })
+
+// 获取热门搜索
+const fetchHotSearch = async () => {
+  try {
+    const response = await getHotSearch()
+    hotRecommendList.value = response.data?.keywords || []
+  } catch (error) {
+    console.error('获取热门搜索失败:', error)
+  }
+}
 
 // ========== 输入关键词实现防抖联想 ==========
 watchEffect(() => {
@@ -100,13 +111,29 @@ watchEffect(() => {
 
   // 防抖：输入停止300ms再执行联想，避免频繁触发
   if (timer) clearTimeout(timer)
-  timer = setTimeout(() => {
-    // 模糊匹配联想词
-    searchResultList.value = searchMatchPool.filter(item => {
-      return item.toLowerCase().includes(keyword.toLowerCase())
-    })
+  timer = setTimeout(async () => {
+    await fetchSearchSuggest(keyword)
   }, 300)
 })
+
+// 获取搜索联想
+const fetchSearchSuggest = async (keyword: string) => {
+  if (loading.value) return
+
+  try {
+    loading.value = true
+    const response = await searchSuggest({
+      keyword,
+      limit: 10
+    })
+    searchResultList.value = response.data?.keywords || []
+  } catch (error) {
+    console.error('获取搜索联想失败:', error)
+    searchResultList.value = []
+  } finally {
+    loading.value = false
+  }
+}
 
 
 const handleDocumentClick = () => {
@@ -116,28 +143,37 @@ const handleDocumentClick = () => {
 const handleSearch = () => {
   const keyword = searchValue.value.trim()
   if (!keyword) return
+
+  // 清除防抖定时器，避免触发联想
+  if (timer) {
+    clearTimeout(timer)
+    timer = null
+  }
+
   // 1. 添加到搜索历史（去重）
   addToHistory(keyword)
-  // 2. 你的搜索业务逻辑：跳转搜索页/调用接口等
-  console.log('执行搜索：', keyword)
-  // 示例：router.push({ path: '/search', query: { keyword } })
+  // 2. 跳转到搜索页面
+  router.push({
+    path: '/search',
+    query: { keyword }
+  })
   // 3. 搜索完成后关闭下拉框
   showSearchBox.value = false
 }
 
-/** 点击联想/历史/推荐项 快速搜索 */
+// 点击联想/历史/推荐项 快速搜索
 const handleItemClick = (keyword: string) => {
   searchValue.value = keyword
   handleSearch()
 }
 
-/** 清空输入框内容 */
+// 清空输入框内容
 const handleClearInput = () => {
   searchValue.value = ''
   searchResultList.value = []
 }
 
-/** 添加关键词到历史记录（去重+最多存储10条） */
+// 添加关键词到历史记录（去重+最多存储10条）
 const addToHistory = (keyword: string) => {
   const index = searchHistoryList.value.findIndex(item => item === keyword)
   if (index > -1) {
@@ -154,7 +190,7 @@ const addToHistory = (keyword: string) => {
   localStorage.setItem('blog_search_history', JSON.stringify(searchHistoryList.value))
 }
 
-/** 删除单条历史记录 */
+// 删除单条历史记录
 const delHistoryItem = (keyword: string) => {
   const index = searchHistoryList.value.findIndex(item => item === keyword)
   if (index > -1) {
@@ -163,7 +199,7 @@ const delHistoryItem = (keyword: string) => {
   }
 }
 
-/** 清空所有历史记录 */
+// 清空所有历史记录
 const clearAllHistory = () => {
   searchHistoryList.value = []
   localStorage.removeItem('blog_search_history')
@@ -195,7 +231,7 @@ const clearAllHistory = () => {
       &:hover {
         border-color: #d1d5db;
         background-color: #f3f4f6;
-        
+
       }
       &.is-focus {
         border-color: #409eff;

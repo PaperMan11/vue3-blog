@@ -54,18 +54,18 @@ export const constantRoutes:RouteRecordRaw[] = [
         name: 'CategoryDetail',
         meta: { title: '分类详情' }
       },
-      {
-        path: '/article/tag',
-        component: () => import('@/views/article/article-tag/tag/index.vue'),
-        name: 'ArticleTag',
-        meta: { title: '文章标签' }
-      },
-      {
-        path: '/article/tag/:id',
-        component: () => import('@/views/article/article-tag/tag-detail/index.vue'),
-        name: 'TagDetail',
-        meta: { title: '标签详情' }
-      },
+      // {
+      //   path: '/article/tag',
+      //   component: () => import('@/views/article/article-tag/tag/index.vue'),
+      //   name: 'ArticleTag',
+      //   meta: { title: '文章标签' }
+      // },
+      // {
+      //   path: '/article/tag/:id',
+      //   component: () => import('@/views/article/article-tag/tag-detail/index.vue'),
+      //   name: 'TagDetail',
+      //   meta: { title: '标签详情' }
+      // },
       {
         path: '/user/profile',
         component: () => import('@/views/user/profile/index.vue'),
@@ -83,6 +83,12 @@ export const constantRoutes:RouteRecordRaw[] = [
         component: () => import('@/views/user/unread-comments/index.vue'),
         name: 'UserUnreadComments',
         meta: { title: '未读评论' }
+      },
+      {
+        path: '/search',
+        component: () => import('@/views/search/index.vue'),
+        name: 'Search',
+        meta: { title: '搜索结果' }
       }
     ]
   },

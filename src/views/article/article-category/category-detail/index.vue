@@ -11,15 +11,18 @@
 
     <div class="detail-content">
       <div v-if="category" class="articles-container">
-        <div v-if="paginatedArticles.length > 0" class="article-list">
-          <el-card v-for="article in paginatedArticles" :key="article.id" class="article-card">
+        <div v-if="category.articles && category.articles.length > 0" class="article-list">
+          <el-card v-for="article in category.articles" :key="article.id" class="article-card">
             <template #header>
               <div class="article-header">
                 <el-link :href="`/article/${article.id}/detail`" target="_blank" class="article-title">{{ article.title }}</el-link>
-                <span class="article-date">{{ article.date }}</span>
+                <div class="article-actions">
+                  <span class="article-date">{{ formatTime(article.createdTime) || '未知时间' }}</span>
+                  <el-button size="small" @click="handleEditArticle(article.id)">编辑</el-button>
+                </div>
               </div>
             </template>
-            <div class="article-excerpt">{{ article.excerpt || '暂无摘要' }}</div>
+            <div class="article-excerpt">{{ article.summary || '暂无摘要' }}</div>
           </el-card>
         </div>
         <el-empty v-else description="该分类下暂无文章" />
@@ -31,7 +34,7 @@
             v-model:page-size="pageSize"
             :page-sizes="[10, 20, 50]"
             layout="total, sizes, prev, pager, next, jumper"
-            :total="category.articles.length"
+            :total="category.articleCount || 0"
             @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
           />
@@ -44,145 +47,89 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import { listArticleByCategory, getArticleByCategory } from '@/api/article/article';
+import type { ArticleCategory } from '@/api/article/types';
+import { formatTime } from '@/utils/time';
 
 // 路由参数
 const route = useRoute();
+const router = useRouter();
 const categoryId = ref<number>(Number(route.params.id) || 0);
-
-// 模拟分类数据
-const categories = ref([
-  {
-    id: 1,
-    name: '技术',
-    articles: [
-      {
-        id: 1,
-        title: 'Vue 3 入门指南',
-        date: '2026-03-01',
-        excerpt: 'Vue 3 是 Vue.js 的最新版本，带来了许多新特性和改进...'
-      },
-      {
-        id: 2,
-        title: 'TypeScript 高级特性',
-        date: '2026-03-02',
-        excerpt: 'TypeScript 提供了许多高级特性，如泛型、接口、类型别名等...'
-      },
-      {
-        id: 3,
-        title: 'React Hooks 详解',
-        date: '2026-03-03',
-        excerpt: 'React Hooks 让我们可以在函数组件中使用状态和其他 React 特性...'
-      },
-      {
-        id: 4,
-        title: 'Node.js 性能优化',
-        date: '2026-03-04',
-        excerpt: 'Node.js 性能优化的一些技巧和最佳实践...'
-      },
-      {
-        id: 5,
-        title: 'GraphQL 入门',
-        date: '2026-03-05',
-        excerpt: 'GraphQL 是一种用于 API 的查询语言，也是一个满足你数据查询的运行时...'
-      },
-      {
-        id: 6,
-        title: 'Docker 容器化部署',
-        date: '2026-03-06',
-        excerpt: 'Docker 是一个开源的应用容器引擎，让开发者可以打包他们的应用...'
-      },
-      {
-        id: 7,
-        title: 'Kubernetes 集群管理',
-        date: '2026-03-07',
-        excerpt: 'Kubernetes 是一个用于自动部署、扩展和管理容器化应用程序的开源系统...'
-      },
-      {
-        id: 8,
-        title: '微服务架构设计',
-        date: '2026-03-08',
-        excerpt: '微服务架构是一种将应用程序设计为一系列松耦合服务的方法...'
-      },
-      {
-        id: 9,
-        title: '前端性能优化',
-        date: '2026-03-09',
-        excerpt: '前端性能优化的一些技巧和最佳实践...'
-      },
-      {
-        id: 10,
-        title: '后端架构设计',
-        date: '2026-03-10',
-        excerpt: '后端架构设计的一些原则和最佳实践...'
-      }
-    ]
-  },
-  {
-    id: 2,
-    name: '生活',
-    articles: [
-      {
-        id: 11,
-        title: '周末旅行攻略',
-        date: '2026-03-03',
-        excerpt: '周末旅行的一些好去处和攻略...'
-      },
-      {
-        id: 12,
-        title: '美食制作教程',
-        date: '2026-03-04',
-        excerpt: '一些简单美味的家常菜制作教程...'
-      }
-    ]
-  },
-  {
-    id: 3,
-    name: '学习',
-    articles: []
-  }
-]);
-
-// 当前分类
-const category = computed(() => {
-  return categories.value.find(c => c.id === categoryId.value);
+const category = ref<ArticleCategory>({
+  id: 0,
+  name: '',
+  description: '',
+  articleCount: 0,
 });
 
 // 分页相关
 const currentPage = ref(1);
 const pageSize = ref(10);
 
-// 计算总页数
 const totalPages = computed(() => {
   if (!category.value) return 0;
-  return Math.ceil(category.value.articles.length / pageSize.value);
-});
-
-// 分页后的文章列表
-const paginatedArticles = computed(() => {
-  if (!category.value) return [];
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return category.value.articles.slice(start, end);
+  return Math.ceil((category.value.articleCount || 0) / pageSize.value);
 });
 
 // 处理页码变化
 const handleCurrentChange = (page: number) => {
   currentPage.value = page;
+  fetchArticles();
 };
 
 // 处理每页大小变化
 const handleSizeChange = (size: number) => {
   pageSize.value = size;
   currentPage.value = 1;
+  fetchArticles();
 };
 
-// 监听路由参数变化
-watch(() => route.params.id, (newId) => {
-  categoryId.value = Number(newId) || 0;
+// // 监听路由参数变化
+// watch(() => route.params.id, async (newId) => {
+//   categoryId.value = Number(newId) || 0;
+//   currentPage.value = 1;
+//   // 从后端获取分类详情
+//   try {
+//     const res = await getArticleByCategory(categoryId.value);
+//     category.value = res.data;
+//   } catch (error) {
+//     ElMessage.error('获取分类详情失败，请稍后重试');
+//   }
+// });
+
+onMounted(async () => {
   currentPage.value = 1;
-  // todo: 从后端获取分类详情
+  // 从后端获取分类详情
+  try {
+    const res = await getArticleByCategory(categoryId.value);
+    category.value = res.data;
+  } catch (error) {
+    ElMessage.error('获取分类详情失败，请稍后重试');
+  }
 });
+
+// 编辑文章
+const handleEditArticle = (articleId: number) => {
+  router.push(`/article/write/${articleId}`);
+};
+
+const fetchArticles = async () => {
+  if (!categoryId.value) return;
+  try {
+    const res = await listArticleByCategory({
+      categoryId: categoryId.value,
+      page: currentPage.value,
+      pageSize: pageSize.value,
+    });
+    const { articles: newArticles, total: newTotal } = res.data || {};
+    category.value.articles = newArticles || [];
+    category.value.articleCount = newTotal || 0;
+  } catch (error) {
+    ElMessage.error('获取文章列表失败，请稍后重试');
+  }
+};
+
 </script>
 
 <style scoped>
@@ -226,6 +173,25 @@ watch(() => route.params.id, (newId) => {
   justify-content: space-between;
   align-items: center;
   width: 100%;
+}
+
+.article-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.article-actions .el-button {
+  background-color: transparent;
+  border: 1px solid #dcdfe6;
+  color: #606266;
+  transition: all 0.3s ease;
+}
+
+.article-actions .el-button:hover {
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  border-color: #409eff;
+  color: #409eff;
 }
 
 .article-title {
